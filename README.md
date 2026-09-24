@@ -1,4 +1,4 @@
-# StremioVR
+# Is3meoVR
 
 A virtual cinema for Meta Quest 3, with a custom 3D theater and screen light spill (the movie lights up the room). Stremio is the first media source; local files and LAN sources come later.
 
