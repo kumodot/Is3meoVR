@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.6.0 | Stand-up fix, smooth turn, hand menu, controller models, 4x3 default, modular seat kit |
 | Light Spill Lab | 0.5.0 | PC stream receiver, screen size, auto aspect, custom seat GLB |
 | Stream Sender | 0.1.0 | PC page that streams a tab/window/screen to the cinema (WebRTC) |
 | Light Spill Lab | 0.4.0 | Curved screen with live curvature control, FPS counter |

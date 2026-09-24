@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Light Spill Lab v0.6.0</title>
+<style>
+  :root {
+    --bg: rgba(12, 14, 20, 0.84);
+    --fg: #dfe3ee;
+    --dim: #8a90a2;
+    --acc: #ffb347;
+    --line: rgba(255, 255, 255, 0.08);
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: var(--fg); }
+  canvas { display: block; }
+  #panel {
+    position: fixed; top: 12px; left: 12px; width: 300px; max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 90px); overflow-y: auto;
+    background: var(--bg); backdrop-filter: blur(10px); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 14px 12px; font-size: 13px; box-sizing: border-box;
+  }
+  .hdr { display: flex; align-items: baseline; justify-content: space-between; }
+  .title { font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
+  .ver { color: var(--acc); font-family: ui-monospace, monospace; font-size: 12px; }
+  .sub { color: var(--dim); font-size: 12px; margin: 2px 0 8px; }
+  .sec { margin: 12px 0 6px; color: var(--acc); font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  button {
+    background: #22262f; color: var(--fg); border: 1px solid #343a47; border-radius: 7px;
+    padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  button:hover { background: #2c313c; }
+  button.on { border-color: var(--acc); color: var(--acc); }
+  .small { color: var(--dim); font-size: 12px; margin-top: 6px; min-height: 16px; }
+  .slider { display: grid; grid-template-columns: 82px 1fr 44px; gap: 8px; align-items: center; margin: 5px 0; }
+  .slider span:last-child { text-align: right; font-family: ui-monospace, monospace; color: var(--dim); font-size: 12px; }
+  input[type=range] { width: 100%; accent-color: var(--acc); }
+  select { background: #22262f; color: var(--fg); border: 1px solid #343a47; border-radius: 6px; padding: 4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin: 5px 0; cursor: pointer; }
+  .key { margin-left: auto; font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); border: 1px solid #343a47; border-radius: 4px; padding: 0 5px; }
+  .hint { color: var(--dim); font-size: 11px; line-height: 1.5; margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+  #status { color: #9fd49f; }
+  #status.warn { color: #ffb347; }
+  #hudLabel {
+    position: fixed; right: 16px; bottom: 240px; font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--dim); pointer-events: none;
+  }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10; }
+  .modal.hidden { display: none; }
+  .card { background: #12151c; border: 1px solid #2a2f3a; border-radius: 14px; padding: 22px 26px; width: 340px; max-width: calc(100vw - 32px); text-align: center; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card p { color: var(--dim); font-size: 13px; line-height: 1.5; }
+  .card .credit { color: var(--fg); font-size: 13px; margin: 14px 0; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <div class="hdr"><div class="title">Light Spill Lab</div><div class="ver" id="ver"></div></div>
+  <div class="sub">VR Cinema prototype // screen light spill <span id="fps" style="float:right;font-family:ui-monospace,monospace"></span></div>
+
+  <div class="sec">Source</div>
+  <div class="row">
+    <button id="btnDemo" class="on">Demo reel</button>
+    <button id="btnVideo">Load video...</button>
+    <button id="btnPlay">Pause</button>
+  </div>
+  <div class="small" id="srcName">Demo reel</div>
+
+  <div class="sec">PC stream (WebRTC)</div>
+  <div class="row">
+    <button id="btnStream">Receive stream</button>
+    <a href="../stream_sender/stream_sender_v0.1.0.html" target="_blank" style="color:var(--acc);font-size:12px">Open sender page (on PC)</a>
+  </div>
+  <div class="small" id="streamInfo">Off. Press Receive, then type the code on the PC sender page.</div>
+
+  <div class="sec">Room</div>
+  <div class="row">
+    <button id="btnGlb">Load GLB room...</button>
+    <button id="btnRoom">Default room</button>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button id="btnSeat">Load seat GLB...</button>
+    <button id="btnArm">Load armrest GLB...</button>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button id="btnKitReset">Reset seat kit</button>
+    <button id="btnKitDownload">Download seat kit</button>
+    <label class="chk" style="margin:0"><input type="checkbox" id="seatFlip"> Rotate 180</label>
+  </div>
+  <div class="small" id="status"></div>
+
+  <div class="sec">Screen</div>
+  <div class="slider"><span>Size</span><input type="range" id="sSize" min="0.6" max="1.3" step="0.05" value="1"><span id="vSize"></span></div>
+  <div class="slider"><span>Curvature</span><input type="range" id="sCurve" min="0" max="60" step="1" value="25"><span id="vCurve"></span></div>
+
+  <div class="sec">Light spill</div>
+  <label class="chk"><input type="checkbox" id="spillOn" checked> Spill enabled <span class="key">L</span></label>
+  <div class="slider"><span>Intensity</span><input type="range" id="sInt" min="0" max="40" step="0.5" value="12"><span id="vInt"></span></div>
+  <div class="slider"><span>Smoothing</span><input type="range" id="sSmooth" min="0" max="1000" step="10" value="180"><span id="vSmooth"></span></div>
+  <div class="slider"><span>Blur passes</span><input type="range" id="sBlur" min="0" max="8" step="1" value="3"><span id="vBlur"></span></div>
+  <div class="slider"><span>Ambient</span><input type="range" id="sAmb" min="0" max="1" step="0.01" value="0.18"><span id="vAmb"></span></div>
+  <div class="slider"><span>Specular</span><input type="range" id="sSpec" min="0" max="3" step="0.05" value="1"><span id="vSpec"></span></div>
+  <div class="slider"><span>Zones</span>
+    <select id="sZones">
+      <option value="4x3" selected>4 x 3 (12)</option>
+      <option value="6x4">6 x 4 (24)</option>
+      <option value="8x5">8 x 5 (40)</option>
+    </select><span></span>
+  </div>
+  <label class="chk"><input type="checkbox" id="dbg" checked> Show spill texture (debug)</label>
+
+  <div class="row" style="margin-top:8px"><button id="btnReset">Reset view (R)</button><button id="btnAbout">About</button></div>
+
+  <div class="hint">
+    <b>Desktop:</b> WASD / arrows move, Q/E down/up, Shift faster, drag to look, wheel = lens FOV, R reset view<br>
+    L toggle spill / N next demo scene / Space play-pause / H hide UI<br>
+    Curvature: 0 = flat. GLB screens are auto-detected as flat or curved. Size grows from the bottom edge; aspect follows the video.<br>
+    Seat kit: seat and armrest are separate GLBs, origin on the floor, front facing -Z, meters. The repo kit (assets/seat_kit) loads by default.<br>
+    <b>VR:</b> left stick move, right stick turn (smooth by default, snap in the menu) + up/down, A/X reset to seat, trigger toggle spill, grip next scene. <b>Y</b> opens the menu on your left controller (L-stick select, R-stick adjust, A/trigger confirm). This desktop panel hides automatically in VR.<br>
+    GLB tip: name your screen mesh <b>Screen</b> and add an empty called <b>Viewpoint</b> at seated eye height. Units in meters.
+  </div>
+</div>
+
+<div id="hudLabel">spill texture (64x36, blurred + smoothed)</div>
+
+<div id="about" class="modal hidden">
+  <div class="card">
+    <h2>Light Spill Lab</h2>
+    <div class="ver" id="aboutVer"></div>
+    <p>Prototype of the screen light spill system for the Quest 3 VR Cinema project. The screen image is downsampled, blurred, smoothed over time and used as a set of area light zones that tint the room.</p>
+    <div class="credit">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
+    <button id="btnAboutClose">Close</button>
+  </div>
+</div>
+
+<input type="file" id="fileVideo" accept="video/*" hidden>
+<input type="file" id="fileGlb" accept=".glb" hidden>
+<input type="file" id="fileSeat" accept=".glb" hidden>
+<input type="file" id="fileArm" accept=".glb" hidden>
+
+<script type="module">
+import * as THREE from 'three';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+
+const APP_VERSION = '0.6.0';
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'v' + APP_VERSION;
+$('aboutVer').textContent = 'v' + APP_VERSION;
+
+// ---------------------------------------------------------------------------
+// Renderer / scene / camera rig
+// ---------------------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local-floor');
+document.body.appendChild(renderer.domElement);
+document.body.appendChild(VRButton.createButton(renderer));
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 300);
+const dolly = new THREE.Group(); // VR rig: moved to the seat when a session starts
+dolly.add(camera);
+scene.add(dolly);
+
+
+const hemi = new THREE.HemisphereLight(0x8890a8, 0x201814, 0.18);
+scene.add(hemi);
+
+// Seat used for VR (floor position under the viewer + yaw facing the screen)
+const seat = { floor: new THREE.Vector3(), yaw: 0 };
+
+// ---------------------------------------------------------------------------
+// Shared spill uniforms (one object, referenced by every patched material)
+// ---------------------------------------------------------------------------
+const MAX_ZONES = 40;
+const spillU = {
+  uSpillTex: { value: null },
+  uSpillIntensity: { value: 12.0 },
+  uSpillOn: { value: 1.0 },
+  uZoneCount: { value: 24 },
+  uZonePos: { value: Array.from({ length: MAX_ZONES }, () => new THREE.Vector3()) },
+  uZoneUV: { value: Array.from({ length: MAX_ZONES }, () => new THREE.Vector2()) },
+  uZoneN: { value: Array.from({ length: MAX_ZONES }, () => new THREE.Vector3(0, 0, 1)) },
+  uZoneArea: { value: 1.0 },
+  uZoneSoft: { value: 0.5 },
+  uScreenN: { value: new THREE.Vector3(0, 0, 1) },
+  uSpillSpecMul: { value: 1.0 },
+};
+
+// Each zone of the screen acts as a small Lambertian area light.
+// Irradiance = sum(color * cos(receiver) * cos(emitter) * area / d^2)
+const SPILL_FRAG_HEAD = /* glsl */`
+#define SPILL_MAX_ZONES ${MAX_ZONES}
+uniform sampler2D uSpillTex;
+uniform float uSpillIntensity;
+uniform float uSpillOn;
+uniform int uZoneCount;
+uniform vec3 uZonePos[SPILL_MAX_ZONES];
+uniform vec2 uZoneUV[SPILL_MAX_ZONES];
+uniform vec3 uZoneN[SPILL_MAX_ZONES];
+uniform float uZoneArea;
+uniform float uZoneSoft;
+uniform vec3 uScreenN;
+varying vec3 vSpillWPos;
+varying vec3 vSpillWNrm;
+
+uniform float uSpillSpecMul;
+uniform float uSpillSpec;
+uniform float uSpillGloss;
+
+// Returns diffuse irradiance, writes a soft Blinn-Phong specular into spec
+vec3 spillLight(vec3 P, vec3 N, vec3 V, float gloss, bool doSpec, out vec3 spec) {
+  vec3 sum = vec3(0.0);
+  spec = vec3(0.0);
+  for (int i = 0; i < SPILL_MAX_ZONES; i++) {
+    if (i >= uZoneCount) break;
+    vec3 L = uZonePos[i] - P;
+    float d2 = dot(L, L);
+    vec3 l = L * inversesqrt(max(d2, 1e-6));
+    float cr = max(dot(N, l), 0.0);          // receiver facing the zone
+    float cs = max(dot(uZoneN[i], -l), 0.0); // zone facing the receiver (per zone, supports curved screens)
+    vec3 c = texture2D(uSpillTex, uZoneUV[i]).rgb;
+    float g = cs / (d2 + uZoneSoft);         // soft term avoids hotspots near the screen
+    sum += c * (cr * g);
+    if (doSpec && cr > 0.0) {
+      vec3 h = normalize(l + V);
+      spec += c * (pow(max(dot(N, h), 0.0), gloss) * cr * g);
+    }
+  }
+  spec *= uZoneArea * (gloss + 8.0) / 25.1327; // normalized Blinn-Phong
+  return sum * uZoneArea;
+}
+`;
+
+function patchMaterial(mat, spec = 0, gloss = 16) {
+  if (mat.userData.spillPatched) return mat;
+  mat.userData.spillPatched = true;
+  const own = { uSpillSpec: { value: spec }, uSpillGloss: { value: gloss } }; // per material
+  mat.userData.spillOwn = own;
+  mat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, spillU, own);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSpillWPos;\nvarying vec3 vSpillWNrm;')
+      .replace('#include <project_vertex>', /* glsl */`#include <project_vertex>
+        vec4 spillWP = vec4(transformed, 1.0);
+        vec3 spillN = objectNormal;
+        #ifdef USE_INSTANCING
+          spillWP = instanceMatrix * spillWP;
+          spillN = mat3(instanceMatrix) * spillN;
+        #endif
+        spillWP = modelMatrix * spillWP;
+        vSpillWPos = spillWP.xyz;
+        vSpillWNrm = normalize(mat3(modelMatrix) * spillN);`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\n' + SPILL_FRAG_HEAD)
+      .replace('#include <aomap_fragment>', /* glsl */`
+        if (uSpillOn > 0.5) {
+          vec3 spN = normalize(vSpillWNrm) * (gl_FrontFacing ? 1.0 : -1.0);
+          vec3 spV = normalize(cameraPosition - vSpillWPos);
+          vec3 spSpec;
+          vec3 spIrr = spillLight(vSpillWPos, spN, spV, uSpillGloss, uSpillSpec > 0.0, spSpec);
+          reflectedLight.indirectDiffuse += spIrr * material.diffuseColor * RECIPROCAL_PI * uSpillIntensity;
+          reflectedLight.indirectSpecular += spSpec * uSpillSpec * uSpillSpecMul * uSpillIntensity;
+        }
+        #include <aomap_fragment>`);
+  };
+  mat.customProgramCacheKey = () => 'spill_v2';
+  mat.needsUpdate = true;
+  return mat;
+}
+
+// ---------------------------------------------------------------------------
+// Screen sources: procedural demo reel + local video file
+// ---------------------------------------------------------------------------
+const demoCanvas = document.createElement('canvas');
+demoCanvas.width = 640; demoCanvas.height = 360;
+const demoCtx = demoCanvas.getContext('2d');
+const demoTex = new THREE.CanvasTexture(demoCanvas);
+demoTex.colorSpace = THREE.SRGBColorSpace;
+
+const video = document.createElement('video');
+video.loop = true; video.playsInline = true;
+let videoTex = null;
+
+let source = 'demo';
+let demoPaused = false;
+let demoTime = 0;
+let lastSceneIdx = -1;
+
+const SCENES = ['Sunset', 'Ocean Night', 'Explosion', 'Forest', 'Police Lights', 'Split Neon', 'End Credits'];
+const SCENE_LEN = 5;
+
+function drawDemo(t) {
+  const W = 640, H = 360, ctx = demoCtx;
+  const si = Math.floor(t / SCENE_LEN) % SCENES.length;
+  const lt = t % SCENE_LEN;
+  ctx.save();
+  switch (si) {
+    case 0: { // Sunset
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#1a0b3a'); g.addColorStop(0.55, '#ff5e3a'); g.addColorStop(1, '#ffb347');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const sx = W * 0.25 + lt * 18, sy = H * 0.62 - lt * 5;
+      const rg = ctx.createRadialGradient(sx, sy, 10, sx, sy, 160);
+      rg.addColorStop(0, 'rgba(255,245,200,1)'); rg.addColorStop(0.25, 'rgba(255,200,120,0.6)'); rg.addColorStop(1, 'rgba(255,120,60,0)');
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#0a0508'; ctx.fillRect(0, H * 0.8, W, H * 0.2);
+      break;
+    }
+    case 1: { // Ocean night
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#020a1f'); g.addColorStop(1, '#0a3a6b');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e8f0ff'; ctx.beginPath(); ctx.arc(W * 0.8, H * 0.2, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 3;
+      for (let k = 0; k < 7; k++) {
+        ctx.strokeStyle = `rgba(90,200,255,${0.15 + k * 0.06})`;
+        ctx.beginPath();
+        const y0 = H * 0.5 + k * 24;
+        for (let x = 0; x <= W; x += 10) ctx.lineTo(x, y0 + Math.sin(x * 0.03 + lt * 2 + k) * 6);
+        ctx.stroke();
+      }
+      break;
+    }
+    case 2: { // Explosion
+      ctx.fillStyle = '#060505'; ctx.fillRect(0, 0, W, H);
+      if (lt > 0.8) {
+        const e = lt - 0.8, r = 30 + e * 260, a = Math.max(0, 1 - e / 3.6);
+        const cx = W * 0.7, cy = H * 0.55;
+        const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        rg.addColorStop(0, `rgba(255,255,240,${a})`); rg.addColorStop(0.3, `rgba(255,200,60,${a})`);
+        rg.addColorStop(0.7, `rgba(255,70,0,${a * 0.8})`); rg.addColorStop(1, 'rgba(80,10,0,0)');
+        ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      }
+      break;
+    }
+    case 3: { // Forest
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#12361a'); g.addColorStop(1, '#0a1f0c');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      for (let k = 0; k < 5; k++) {
+        const fl = 0.12 + 0.08 * Math.sin(lt * 3 + k * 1.7);
+        ctx.fillStyle = `rgba(190,255,150,${fl})`;
+        ctx.beginPath(); ctx.moveTo(60 + k * 70, 0); ctx.lineTo(110 + k * 70, 0);
+        ctx.lineTo(260 + k * 110, H); ctx.lineTo(180 + k * 110, H); ctx.fill();
+      }
+      break;
+    }
+    case 4: { // Police lights
+      ctx.fillStyle = '#020204'; ctx.fillRect(0, 0, W, H);
+      const phase = Math.floor(lt * 6) % 2;
+      const cx = phase === 0 ? W * 0.2 : W * 0.8;
+      const col = phase === 0 ? '255,30,30' : '40,80,255';
+      const rg = ctx.createRadialGradient(cx, H * 0.5, 0, cx, H * 0.5, 260);
+      rg.addColorStop(0, `rgba(${col},1)`); rg.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      break;
+    }
+    case 5: { // Split neon
+      const split = W * (0.5 + 0.3 * Math.sin(lt * 1.2));
+      ctx.fillStyle = '#00e5ff'; ctx.fillRect(0, 0, split, H);
+      ctx.fillStyle = '#ff00aa'; ctx.fillRect(split, 0, W - split, H);
+      break;
+    }
+    case 6: { // End credits
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e8e8e8'; ctx.font = '20px Georgia, serif'; ctx.textAlign = 'center';
+      const lines = ['LIGHT SPILL LAB', '', 'Directed by', 'Marcelo Souza', '', 'Screen Light', 'Area Zones', '', 'Kumodot.art', '2026'];
+      lines.forEach((s, k) => ctx.fillText(s, W / 2, H + 20 + k * 34 - lt * 90));
+      break;
+    }
+  }
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = '13px monospace'; ctx.textAlign = 'left';
+  ctx.fillText('DEMO REEL // ' + SCENES[si].toUpperCase(), 14, H - 14);
+  return si;
+}
+
+// PC stream (WebRTC) video element
+const streamVideo = document.createElement('video');
+streamVideo.playsInline = true;
+let streamTex = null;
+
+function currentScreenTex() {
+  if (source === 'video' && videoTex) return videoTex;
+  if (source === 'stream' && streamTex) return streamTex;
+  return demoTex;
+}
+function activeVideo() {
+  return source === 'video' ? video : source === 'stream' ? streamVideo : null;
+}
+
+// ---------------------------------------------------------------------------
+// Screen mesh + frame (position / axes / size) + zone layout
+// ---------------------------------------------------------------------------
+const screenMat = new THREE.MeshBasicMaterial({ map: demoTex, toneMapped: false });
+const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), screenMat);
+scene.add(screenMesh);
+let maskMesh = null; // curved black masking behind the screen (default room only)
+
+const screenFrame = {
+  center: new THREE.Vector3(), right: new THREE.Vector3(1, 0, 0),
+  up: new THREE.Vector3(0, 1, 0), normal: new THREE.Vector3(0, 0, 1), w: 12, h: 6.75,
+};
+let zonesX = 4, zonesY = 3; // light default for Quest
+let curveDeg = 25; // total arc angle of the screen, 0 = flat
+
+// Curved panel that keeps its arc length = w. Local +Z faces the viewer, edges bend toward +Z.
+function curvedPanelGeometry(w, h, arc, segX = 64) {
+  const curved = arc > 1e-3;
+  const g = new THREE.PlaneGeometry(w, h, curved ? segX : 1, 1);
+  if (curved) {
+    const R = w / arc, pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const a = (pos.getX(i) / w) * arc;
+      pos.setX(i, R * Math.sin(a));
+      pos.setZ(i, R * (1 - Math.cos(a)));
+    }
+    g.computeVertexNormals();
+  }
+  return g;
+}
+
+// Point + normal on the screen for (u, v), in screen-local coordinates
+function screenLocal(u, v, outP, outN) {
+  const f = screenFrame, arc = THREE.MathUtils.degToRad(curveDeg);
+  const y = (v - 0.5) * f.h;
+  if (arc < 1e-3) { outP.set((u - 0.5) * f.w, y, 0); outN.set(0, 0, 1); return; }
+  const R = f.w / arc, a = (u - 0.5) * arc;
+  outP.set(R * Math.sin(a), y, R * (1 - Math.cos(a)));
+  outN.set(-Math.sin(a), 0, Math.cos(a));
+}
+
+// Screen as authored by the room; size and content aspect are applied on top (bottom edge anchored)
+const screenBase = {
+  center: new THREE.Vector3(), right: new THREE.Vector3(1, 0, 0),
+  up: new THREE.Vector3(0, 1, 0), normal: new THREE.Vector3(0, 0, 1), w: 12, h: 6.75,
+};
+let screenSize = 1.0, contentAspect = 16 / 9;
+
+function setScreenBase(center, right, up, normal, w, h) {
+  screenBase.center.copy(center); screenBase.right.copy(right);
+  screenBase.up.copy(up); screenBase.normal.copy(normal);
+  screenBase.w = w; screenBase.h = h;
+  applyScreenLayout();
+}
+function applyScreenLayout() {
+  const b = screenBase;
+  const w = b.w * screenSize, h = w / contentAspect;
+  const c = b.center.clone().addScaledVector(b.up, (h - b.h) / 2);
+  setScreenFrame(c, b.right, b.up, b.normal, w, h);
+}
+function setContentAspect(a) {
+  if (!isFinite(a) || a <= 0) return;
+  a = THREE.MathUtils.clamp(a, 1.2, 2.8);
+  if (Math.abs(a - contentAspect) < 0.005) return;
+  contentAspect = a;
+  applyScreenLayout();
+}
+
+function setScreenFrame(center, right, up, normal, w, h) {
+  screenFrame.center.copy(center); screenFrame.right.copy(right);
+  screenFrame.up.copy(up); screenFrame.normal.copy(normal);
+  screenFrame.w = w; screenFrame.h = h;
+  rebuildScreen();
+}
+
+function rebuildScreen() {
+  const f = screenFrame, arc = THREE.MathUtils.degToRad(curveDeg);
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(f.right, f.up, f.normal));
+  screenMesh.geometry.dispose();
+  screenMesh.geometry = curvedPanelGeometry(f.w, f.h, arc);
+  screenMesh.quaternion.copy(q);
+  screenMesh.position.copy(f.center).addScaledVector(f.normal, 0.005);
+  screenMesh.scale.set(1, 1, 1);
+  if (maskMesh) {
+    const mw = f.w + 0.8;
+    maskMesh.geometry.dispose();
+    maskMesh.geometry = curvedPanelGeometry(mw, f.h + 0.65, arc * (mw / f.w)); // same radius
+    maskMesh.quaternion.copy(q);
+    maskMesh.position.copy(f.center).addScaledVector(f.normal, -0.03);
+  }
+  rebuildZones();
+}
+
+function rebuildZones() {
+  const f = screenFrame;
+  const p = new THREE.Vector3(), n = new THREE.Vector3();
+  let i = 0;
+  for (let y = 0; y < zonesY; y++) {
+    for (let x = 0; x < zonesX; x++) {
+      const u = (x + 0.5) / zonesX, v = (y + 0.5) / zonesY;
+      screenLocal(u, v, p, n);
+      spillU.uZonePos.value[i].copy(f.center)
+        .addScaledVector(f.right, p.x).addScaledVector(f.up, p.y).addScaledVector(f.normal, p.z);
+      spillU.uZoneN.value[i].set(0, 0, 0).addScaledVector(f.right, n.x).addScaledVector(f.normal, n.z).normalize();
+      spillU.uZoneUV.value[i].set(u, v);
+      i++;
+    }
+  }
+  spillU.uZoneCount.value = i;
+  spillU.uZoneArea.value = (f.w * f.h) / i; // arc length is preserved, so area stays w * h
+  spillU.uZoneSoft.value = spillU.uZoneArea.value * 0.35;
+  spillU.uScreenN.value.copy(f.normal);
+}
+
+function setCurve(deg) {
+  curveDeg = deg;
+  const el = $('sCurve');
+  if (el && +el.value !== deg) { el.value = deg; $('vCurve').textContent = deg + '\u00b0'; }
+  rebuildScreen();
+}
+
+// Desktop first-person camera state
+const view = { eye: new THREE.Vector3(), yaw: 0, pitch: 0 };
+let camYaw = 0, camPitch = 0;
+function applyCamRot() { camera.rotation.set(camPitch, camYaw, 0, 'YXZ'); }
+
+function setViewpoint(eye, target) {
+  const d = new THREE.Vector3().subVectors(target, eye);
+  view.eye.copy(eye);
+  view.yaw = Math.atan2(-d.x, -d.z);
+  view.pitch = Math.atan2(d.y, Math.hypot(d.x, d.z));
+  seat.floor.set(eye.x, eye.y - 1.2, eye.z); // seated eye height ~1.2 m
+  seat.yaw = view.yaw;
+  resetView();
+}
+
+function resetView() {
+  if (renderer.xr.isPresenting) {
+    // Put the head (not the rig origin) back over the seat, facing the screen
+    dolly.rotation.set(0, seat.yaw, 0);
+    const off = new THREE.Vector3(camera.position.x, 0, camera.position.z).applyAxisAngle(Y_AXIS, seat.yaw);
+    dolly.position.copy(seat.floor).sub(off);
+    return;
+  }
+  camera.position.copy(view.eye);
+  camYaw = view.yaw; camPitch = view.pitch;
+  applyCamRot();
+  camera.fov = 60;
+  camera.updateProjectionMatrix();
+}
+
+// Room limits so the camera can't fly out of the theater
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const bounds = new THREE.Box3(new THREE.Vector3(-8.6, 0.3, -10.4), new THREE.Vector3(8.6, 9.6, 10.8));
+let floorAt = () => bounds.min.y;
+function clampToRoom(p, minAbove = 0.5) {
+  p.x = THREE.MathUtils.clamp(p.x, bounds.min.x, bounds.max.x);
+  p.z = THREE.MathUtils.clamp(p.z, bounds.min.z, bounds.max.z);
+  p.y = Math.min(p.y, bounds.max.y);
+  p.y = Math.max(p.y, floorAt(p.x, p.z) + minAbove);
+}
+
+// ---------------------------------------------------------------------------
+// Default procedural room
+// ---------------------------------------------------------------------------
+let roomGroup = new THREE.Group();
+scene.add(roomGroup);
+
+function stdMat(color, rough = 0.9, spec = 0, gloss = 16) {
+  return patchMaterial(new THREE.MeshStandardMaterial({ color, roughness: rough }), spec, gloss);
+}
+function box(w, h, d, mat, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  roomGroup.add(m);
+  return m;
+}
+const zRow = (i) => -3 + i * 1.1;
+const ROWS = 12, RISE = 0.3;
+
+function buildDefaultRoom() {
+  const carpet = stdMat(0x2a2628, 0.95);
+  const wall = stdMat(0x2b2d36, 0.9, 0.03, 8);
+  const panel = stdMat(0x4a4e5c, 0.8, 0.08, 10);
+  const ceil = stdMat(0x34363f, 0.9);
+  const cloud = stdMat(0x5a5e6c, 0.75, 0.05, 8);
+  const black = stdMat(0x060606, 1.0);
+  const stage = stdMat(0x1c1c20, 0.7, 0.3, 30);
+
+  box(18, 0.2, 22.4, carpet, 0, -0.1, 0);        // floor
+  box(18, 0.2, 22.4, ceil, 0, 10.1, 0);          // ceiling
+  box(0.2, 10, 22.4, wall, -9.1, 5, 0);          // left wall
+  box(0.2, 10, 22.4, wall, 9.1, 5, 0);           // right wall
+  box(18, 10, 0.2, wall, 0, 5, -11.15);          // front wall
+  box(18, 10, 0.2, wall, 0, 5, 11.1);            // back wall
+
+  for (let z = -8; z <= 9; z += 3) {             // acoustic panels
+    box(0.15, 5.5, 2.4, panel, -8.925, 4.6, z);
+    box(0.15, 5.5, 2.4, panel, 8.925, 4.6, z);
+  }
+  // Acoustic ceiling clouds, tilted toward the screen so they catch its light
+  for (let z = -6; z <= 9; z += 3.5) {
+    const c = box(14, 0.12, 2.6, cloud, 0, 8.6, z);
+    c.rotation.x = 0.15;
+  }
+  box(16, 0.9, 1.6, stage, 0, 0.45, -10.2);      // stage
+  maskMesh = new THREE.Mesh(new THREE.BufferGeometry(), black); // curved screen masking
+  roomGroup.add(maskMesh);
+
+  for (let i = 1; i < ROWS; i++) {               // stepped platforms
+    const h = i * RISE;
+    box(18, h, 1.1, carpet, 0, h / 2, zRow(i));
+  }
+  box(18, ROWS * RISE, 1.35, carpet, 0, (ROWS * RISE) / 2, 10.325);
+
+  // Seat and armrest spots (floor positions), filled by the seat kit
+  seatSpots = [];
+  const arms = new Map();
+  for (let i = 0; i < ROWS; i++) {
+    for (let k = 0; k <= 22; k++) {
+      const x = -6.6 + k * 0.6;
+      if (Math.abs(Math.abs(x) - 4.2) < 0.05) continue; // aisles
+      seatSpots.push(new THREE.Vector3(x, i * RISE, zRow(i)));
+      for (const ax of [x - 0.3, x + 0.3]) arms.set(i + '_' + ax.toFixed(2), new THREE.Vector3(ax, i * RISE, zRow(i)));
+    }
+  }
+  armSpots = Array.from(arms.values());
+  seatGroup = new THREE.Group();
+  roomGroup.add(seatGroup);
+  buildSeatMeshes();
+
+  // Aisle step lights (unlit, not affected by spill)
+  const stepMat = new THREE.MeshBasicMaterial({ color: 0xffa040 });
+  for (let i = 0; i < ROWS; i++) {
+    for (const x of [-4.2, 4.2]) {
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.03), stepMat);
+      s.position.set(x, i * RISE + 0.02, zRow(i) - 0.55);
+      roomGroup.add(s);
+    }
+  }
+
+  bounds.min.set(-8.6, 0.3, -10.4);
+  bounds.max.set(8.6, 9.6, 10.8);
+  floorAt = (x, z) => {
+    if (z < -9.4 && Math.abs(x) < 8) return 0.9;                 // stage
+    if (z >= zRow(ROWS - 1) + 0.55) return ROWS * RISE;          // rear platform
+    for (let i = ROWS - 1; i >= 1; i--) if (z >= zRow(i) - 0.55) return i * RISE;
+    return 0;
+  };
+  setScreenBase(
+    new THREE.Vector3(0, 4.6, -10.89), new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), 12, 6.75
+  );
+  setViewpoint(new THREE.Vector3(0, 6 * RISE + 1.15, zRow(6) + 0.25), new THREE.Vector3(0, 4.3, -10.89));
+}
+
+// ---------------------------------------------------------------------------
+// Seat kit: seat + armrest as separate modular parts, instanced on every spot.
+// Origin on the floor, front facing -Z, meters. Repo kit: assets/seat_kit/seat.glb + armrest.glb
+// ---------------------------------------------------------------------------
+let seatSpots = [], armSpots = [];
+let seatGroup = null;
+const kit = { seat: null, arm: null }; // custom parts, null = built-in
+let builtinKit = null;
+
+// Built-in kit geometry (also what "Download seat kit" exports)
+function makeSeatKit() {
+  const fabric = new THREE.MeshStandardMaterial({ name: 'SeatFabric', color: 0x6a121c, roughness: 0.8 });
+  const plastic = new THREE.MeshStandardMaterial({ name: 'ArmPlastic', color: 0x1e1e22, roughness: 0.6 });
+  const seat = new THREE.Group(); seat.name = 'Seat';
+  const cushion = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.16, 0.5, 3, 0.06), fabric);
+  cushion.name = 'Seat_Cushion'; cushion.position.set(0, 0.44, 0.02);
+  const back = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.7, 0.12, 3, 0.05), fabric);
+  back.name = 'Seat_Back'; back.position.set(0, 0.82, 0.34); back.rotation.x = 0.17;
+  seat.add(cushion, back);
+  const arm = new THREE.Group(); arm.name = 'Armrest';
+  const top = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.1, 0.55, 2, 0.035), plastic);
+  top.name = 'Arm_Top'; top.position.set(0, 0.64, 0.05);
+  const leg = new THREE.Mesh(new RoundedBoxGeometry(0.06, 0.6, 0.36, 2, 0.02), plastic);
+  leg.name = 'Arm_Leg'; leg.position.set(0, 0.3, 0.12);
+  arm.add(top, leg);
+  return { seat, arm };
+}
+
+// Material by name: fabric gets a soft sheen, hard parts a tighter highlight
+function kitMat(m) {
+  const n = ((m && m.name) || '').toLowerCase();
+  let spec = 0.15, gloss = 20;
+  if (/fabric|cloth|velvet|cushion|seat/.test(n)) { spec = 0.35; gloss = 10; }
+  else if (/plastic|arm|metal|wood|leg/.test(n)) { spec = 0.6; gloss = 40; }
+  if (m && m.isMeshStandardMaterial) return patchMaterial(m, spec, gloss);
+  return patchMaterial(new THREE.MeshStandardMaterial({
+    name: m && m.name, color: m && m.color ? m.color.clone() : 0xffffff, map: (m && m.map) || null, roughness: 0.85,
+  }), spec, gloss);
+}
+
+// Flatten a model into instancing parts (geometry baked to the model origin)
+function partsFrom(root, allowFix) {
+  root.updateMatrixWorld(true);
+  const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+  const unit = allowFix && size.y > 3 ? 0.01 : 1; // taller than 3 units = probably centimeters
+  const fix = new THREE.Matrix4().makeScale(unit, unit, unit);
+  if (allowFix && $('seatFlip').checked) fix.premultiply(new THREE.Matrix4().makeRotationY(Math.PI));
+  const parts = [];
+  let tris = 0;
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(fix, o.matrixWorld));
+    g.userData.keep = true; // shared by rebuilds, never disposed with the room
+    const mat = Array.isArray(o.material) ? o.material.map(kitMat) : kitMat(o.material);
+    parts.push({ geometry: g, material: mat });
+    tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+  });
+  parts.tris = Math.round(tris);
+  parts.unitFixed = unit !== 1;
+  return parts;
+}
+
+function getBuiltinKit() {
+  if (!builtinKit) { const k = makeSeatKit(); builtinKit = { seat: partsFrom(k.seat, false), arm: partsFrom(k.arm, false) }; }
+  return builtinKit;
+}
+
+function addInstances(parts, spots) {
+  const m4 = new THREE.Matrix4();
+  for (const part of parts) {
+    const im = new THREE.InstancedMesh(part.geometry, part.material, spots.length);
+    spots.forEach((p, k) => { m4.makeTranslation(p.x, p.y, p.z); im.setMatrixAt(k, m4); });
+    seatGroup.add(im);
+  }
+}
+
+function buildSeatMeshes() {
+  if (!seatGroup) return;
+  seatGroup.children.slice().forEach((m) => { seatGroup.remove(m); if (m.dispose) m.dispose(); });
+  const bi = getBuiltinKit();
+  addInstances(kit.seat || bi.seat, seatSpots);
+  addInstances(kit.arm || bi.arm, armSpots);
+}
+
+function kitSummary() {
+  const bi = getBuiltinKit();
+  const st = (kit.seat || bi.seat).tris, at = (kit.arm || bi.arm).tris;
+  const total = st * seatSpots.length + at * armSpots.length;
+  return `Seat ${st} tris x ${seatSpots.length}, armrest ${at} tris x ${armSpots.length} = ${Math.round(total / 1000)}k tris`;
+}
+
+function loadKitPart(which, gltf, name) {
+  const parts = partsFrom(gltf.scene, true);
+  if (!parts.length) { setStatus('No meshes found in ' + name, true); return; }
+  kit[which] = parts;
+  buildSeatMeshes();
+  setStatus(`${which === 'seat' ? 'Seat' : 'Armrest'}: ${name}` + (parts.unitFixed ? ' (scaled from cm)' : '') + ' - ' + kitSummary());
+}
+
+// Repo kit: the improved models live in the repo and load by default
+const KIT_URL = '../assets/seat_kit/';
+function loadRepoKit() {
+  let pending = 2;
+  const done = () => {
+    if (--pending > 0) return;
+    buildSeatMeshes();
+    setStatus((kit.seat || kit.arm ? 'Repo seat kit - ' : 'Built-in seat kit - ') + kitSummary());
+  };
+  for (const [which, file] of [['seat', 'seat.glb'], ['arm', 'armrest.glb']]) {
+    loader.load(KIT_URL + file + '?t=' + Date.now(),
+      (gltf) => { const pr = partsFrom(gltf.scene, false); if (pr.length) kit[which] = pr; done(); },
+      undefined,
+      () => done()); // missing file: keep the built-in part
+  }
+}
+
+async function exportSeatKit() {
+  const k = makeSeatKit();
+  const ex = new GLTFExporter();
+  return {
+    seat: await ex.parseAsync(k.seat, { binary: true }),
+    arm: await ex.parseAsync(k.arm, { binary: true }),
+  };
+}
+async function downloadSeatKit() {
+  const out = await exportSeatKit();
+  for (const [ab, file] of [[out.seat, 'seat.glb'], [out.arm, 'armrest.glb']]) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ab], { type: 'model/gltf-binary' }));
+    a.download = file; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+}
+window.lslKit = { exportSeatKit }; // used by the kit export script
+
+function clearRoom() {
+  scene.remove(roomGroup);
+  roomGroup.traverse((o) => { if (o.geometry && !o.geometry.userData.keep) o.geometry.dispose(); });
+  roomGroup = new THREE.Group();
+  scene.add(roomGroup);
+  maskMesh = null;
+  seatGroup = null;
+}
+
+// ---------------------------------------------------------------------------
+// GLB room loading
+// ---------------------------------------------------------------------------
+const loader = new GLTFLoader();
+
+function convertMat(m) {
+  if (m && m.isMeshStandardMaterial) return patchMaterial(m, 0.12, 20);
+  const s = new THREE.MeshStandardMaterial({
+    color: m && m.color ? m.color.clone() : 0xffffff,
+    map: m && m.map ? m.map : null, roughness: 0.9,
+  });
+  return patchMaterial(s, 0.12, 20);
+}
+
+function frameFromMesh(mesh, towards) {
+  const g = mesh.geometry;
+  g.computeBoundingBox();
+  const bb = g.boundingBox;
+  const size = bb.getSize(new THREE.Vector3());
+  const center = bb.getCenter(new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+  const m3 = new THREE.Matrix3().setFromMatrix4(mesh.matrixWorld);
+  const axes = [new THREE.Vector3(size.x, 0, 0), new THREE.Vector3(0, size.y, 0), new THREE.Vector3(0, 0, size.z)]
+    .map((a) => a.applyMatrix3(m3));
+  const lens = axes.map((a) => a.length());
+  const idx = [0, 1, 2].sort((a, b) => lens[a] - lens[b]);
+  const others = [idx[1], idx[2]];
+  const dirs = axes.map((a, i) => (lens[i] > 1e-6 ? a.clone().divideScalar(lens[i]) : new THREE.Vector3()));
+  const ui = Math.abs(dirs[others[0]].y) > Math.abs(dirs[others[1]].y) ? others[0] : others[1];
+  const ri = ui === others[0] ? others[1] : others[0];
+  const up = dirs[ui].clone(); if (up.y < 0) up.negate();
+  const normal = new THREE.Vector3().crossVectors(dirs[ri], up).normalize();
+  if (normal.dot(new THREE.Vector3().subVectors(towards, center)) < 0) normal.negate();
+  const right = new THREE.Vector3().crossVectors(up, normal).normalize();
+  up.crossVectors(normal, right).normalize();
+  // Curved screen: depth of the bbox is the sag of the arc
+  const sag = lens[idx[0]], chord = lens[ri];
+  let w = chord, deg = 0;
+  if (sag > 0.02 * chord) {
+    const R = (chord * chord / 4 + sag * sag) / (2 * sag);
+    const arc = 2 * Math.asin(Math.min(1, chord / (2 * R)));
+    w = R * arc;
+    deg = Math.min(90, Math.round(THREE.MathUtils.radToDeg(arc)));
+    center.addScaledVector(normal, -sag / 2); // arc middle sits at the back of the bbox
+  }
+  curveDeg = deg;
+  if ($('sCurve')) { $('sCurve').value = deg; $('vCurve').textContent = deg + '\u00b0'; }
+  setScreenBase(center, right, up, normal, w, lens[ui]);
+}
+
+function setStatus(msg, warn = false) {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = 'small' + (warn ? ' warn' : '');
+}
+
+function loadRoomFromGltf(gltf, name) {
+  clearRoom();
+  const root = gltf.scene;
+  roomGroup.add(root);
+  root.updateMatrixWorld(true);
+
+  let screenObj = null, viewObj = null;
+  root.traverse((o) => {
+    const nm = (o.name || '').toLowerCase();
+    const pn = (o.parent && o.parent.name ? o.parent.name : '').toLowerCase();
+    if (!viewObj && /viewpoint|view_point|seat_cam/.test(nm)) viewObj = o;
+    if (o.isMesh) {
+      if (!screenObj && (/screen/.test(nm) || /screen/.test(pn))) screenObj = o;
+      o.material = Array.isArray(o.material) ? o.material.map(convertMat) : convertMat(o.material);
+    }
+  });
+
+  const roomBox = new THREE.Box3().setFromObject(root);
+  const roomCenter = roomBox.getCenter(new THREE.Vector3());
+  bounds.min.copy(roomBox.min).addScalar(0.25);
+  bounds.max.copy(roomBox.max).addScalar(-0.25);
+  floorAt = () => roomBox.min.y;
+  const viewPos = viewObj ? viewObj.getWorldPosition(new THREE.Vector3()) : null;
+
+  if (screenObj) {
+    frameFromMesh(screenObj, viewPos || roomCenter);
+    screenObj.visible = false;
+  }
+  const f = screenFrame;
+  const eye = viewPos || f.center.clone().addScaledVector(f.normal, Math.max(f.w * 0.9, 3)).setY(f.center.y - f.h * 0.1);
+  setViewpoint(eye, f.center);
+
+  const notes = [];
+  if (!screenObj) notes.push("no mesh named 'Screen' (using previous screen placement)");
+  if (!viewObj) notes.push("no 'Viewpoint' empty (auto placed)");
+  setStatus(`Loaded ${name}` + (notes.length ? ' - ' + notes.join(', ') : ''), notes.length > 0);
+}
+
+// ---------------------------------------------------------------------------
+// Spill pipeline: screen -> 256x144 -> 64x36 -> blur -> temporal smoothing
+// ---------------------------------------------------------------------------
+const SW = 64, SH = 36;
+const rtOpts = {
+  type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+  depthBuffer: false, generateMipmaps: false,
+};
+const rtMid = new THREE.WebGLRenderTarget(256, 144, rtOpts);
+const rtLow = new THREE.WebGLRenderTarget(SW, SH, rtOpts);
+const rtBlur = new THREE.WebGLRenderTarget(SW, SH, rtOpts);
+const rtAcc = [new THREE.WebGLRenderTarget(SW, SH, rtOpts), new THREE.WebGLRenderTarget(SW, SH, rtOpts)];
+let accIdx = 0;
+let firstSpillFrame = true;
+
+const FS_VERT = /* glsl */`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+function fsMat(frag, uniforms) {
+  return new THREE.ShaderMaterial({ vertexShader: FS_VERT, fragmentShader: frag, uniforms, depthTest: false, depthWrite: false });
+}
+
+// 4x4 box filter inside the output texel footprint (reduces aliasing / flicker)
+const downMat = fsMat(/* glsl */`
+  uniform sampler2D tSrc; uniform vec2 uOutTexel; varying vec2 vUv;
+  void main(){
+    vec3 c = vec3(0.0);
+    for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) {
+      vec2 o = (vec2(float(x), float(y)) - 1.5) * 0.25 * uOutTexel;
+      c += texture2D(tSrc, vUv + o).rgb;
+    }
+    gl_FragColor = vec4(c / 16.0, 1.0);
+  }`, { tSrc: { value: null }, uOutTexel: { value: new THREE.Vector2() } });
+
+// 9-tap separable gaussian (linear sampling trick)
+const blurMat = fsMat(/* glsl */`
+  uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv;
+  void main(){
+    vec3 c = texture2D(tSrc, vUv).rgb * 0.2270270270;
+    c += texture2D(tSrc, vUv + uDir * 1.3846153846).rgb * 0.3162162162;
+    c += texture2D(tSrc, vUv - uDir * 1.3846153846).rgb * 0.3162162162;
+    c += texture2D(tSrc, vUv + uDir * 3.2307692308).rgb * 0.0702702703;
+    c += texture2D(tSrc, vUv - uDir * 3.2307692308).rgb * 0.0702702703;
+    gl_FragColor = vec4(c, 1.0);
+  }`, { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } });
+
+// Exponential moving average so cuts fade instead of popping
+const tempMat = fsMat(/* glsl */`
+  uniform sampler2D tPrev; uniform sampler2D tCur; uniform float uK; varying vec2 vUv;
+  void main(){ gl_FragColor = vec4(mix(texture2D(tPrev, vUv).rgb, texture2D(tCur, vUv).rgb, uK), 1.0); }`,
+  { tPrev: { value: null }, tCur: { value: null }, uK: { value: 1 } });
+
+const fsCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const fsScene = new THREE.Scene();
+const fsQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), downMat);
+fsQuad.frustumCulled = false;
+fsScene.add(fsQuad);
+function pass(mat, target) {
+  fsQuad.material = mat;
+  renderer.setRenderTarget(target);
+  renderer.render(fsScene, fsCam);
+}
+
+let blurPasses = 3;
+let smoothingMs = 180;
+
+function computeSpill(dt) {
+  const xrWasOn = renderer.xr.enabled;
+  const prevRT = renderer.getRenderTarget();
+  renderer.xr.enabled = false; // offscreen passes must not go through the XR camera
+
+  downMat.uniforms.tSrc.value = currentScreenTex();
+  downMat.uniforms.uOutTexel.value.set(1 / 256, 1 / 144);
+  pass(downMat, rtMid);
+  downMat.uniforms.tSrc.value = rtMid.texture;
+  downMat.uniforms.uOutTexel.value.set(1 / SW, 1 / SH);
+  pass(downMat, rtLow);
+
+  for (let i = 0; i < blurPasses; i++) {
+    blurMat.uniforms.tSrc.value = rtLow.texture; blurMat.uniforms.uDir.value.set(1.5 / SW, 0);
+    pass(blurMat, rtBlur);
+    blurMat.uniforms.tSrc.value = rtBlur.texture; blurMat.uniforms.uDir.value.set(0, 1.5 / SH);
+    pass(blurMat, rtLow);
+  }
+
+  const tau = smoothingMs / 1000;
+  const k = (firstSpillFrame || tau <= 0) ? 1 : 1 - Math.exp(-dt / tau);
+  tempMat.uniforms.tPrev.value = rtAcc[accIdx].texture;
+  tempMat.uniforms.tCur.value = rtLow.texture;
+  tempMat.uniforms.uK.value = k;
+  pass(tempMat, rtAcc[1 - accIdx]);
+  accIdx = 1 - accIdx;
+  firstSpillFrame = false;
+
+  spillU.uSpillTex.value = rtAcc[accIdx].texture;
+  hudMat.map = rtAcc[accIdx].texture;
+
+  renderer.xr.enabled = xrWasOn;
+  renderer.setRenderTarget(prevRT);
+}
+
+// ---------------------------------------------------------------------------
+// Debug HUD (desktop only)
+// ---------------------------------------------------------------------------
+const hudScene = new THREE.Scene();
+const hudCam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+const hudMat = new THREE.MeshBasicMaterial({ map: rtAcc[0].texture, toneMapped: false });
+const hudQuad = new THREE.Mesh(new THREE.PlaneGeometry(256, 144), hudMat);
+hudScene.add(hudQuad);
+let showDebug = true;
+
+function layoutHud() {
+  hudCam.left = 0; hudCam.right = window.innerWidth;
+  hudCam.top = window.innerHeight; hudCam.bottom = 0;
+  hudCam.updateProjectionMatrix();
+  hudQuad.position.set(window.innerWidth - 128 - 16, 72 + 90, 0);
+}
+layoutHud();
+
+// ---------------------------------------------------------------------------
+// UI
+// ---------------------------------------------------------------------------
+function bindSlider(id, valId, fmt, onChange) {
+  const s = $(id), v = $(valId);
+  const upd = () => { const x = parseFloat(s.value); v.textContent = fmt(x); onChange(x); };
+  s.addEventListener('input', upd); upd();
+}
+bindSlider('sInt', 'vInt', (x) => x.toFixed(1), (x) => { spillU.uSpillIntensity.value = x; });
+bindSlider('sSmooth', 'vSmooth', (x) => x + 'ms', (x) => { smoothingMs = x; });
+bindSlider('sBlur', 'vBlur', (x) => String(x), (x) => { blurPasses = x; });
+bindSlider('sSize', 'vSize', (x) => Math.round(x * 100) + '%', (x) => { screenSize = x; applyScreenLayout(); });
+bindSlider('sCurve', 'vCurve', (x) => x + '\u00b0', (x) => { curveDeg = x; rebuildScreen(); });
+bindSlider('sSpec', 'vSpec', (x) => x.toFixed(2), (x) => { spillU.uSpillSpecMul.value = x; });
+bindSlider('sAmb', 'vAmb', (x) => x.toFixed(2), (x) => { hemi.intensity = x; });
+
+$('sZones').addEventListener('change', (e) => {
+  const [x, y] = e.target.value.split('x').map(Number);
+  zonesX = x; zonesY = y; rebuildZones();
+});
+
+function setSpill(on) {
+  spillU.uSpillOn.value = on ? 1 : 0;
+  $('spillOn').checked = on;
+}
+$('spillOn').addEventListener('change', (e) => setSpill(e.target.checked));
+$('dbg').addEventListener('change', (e) => {
+  showDebug = e.target.checked;
+  $('hudLabel').style.display = showDebug ? '' : 'none';
+});
+
+function setSource(s) {
+  source = s;
+  $('btnDemo').classList.toggle('on', s === 'demo');
+  $('btnVideo').classList.toggle('on', s === 'video');
+  $('btnStream').classList.toggle('on', s === 'stream');
+  screenMat.map = currentScreenTex();
+  screenMat.needsUpdate = true;
+  if (s !== 'video') video.pause();
+  if (s === 'demo') { lastSceneIdx = -1; setContentAspect(16 / 9); }
+  const v = activeVideo();
+  if (v && v.videoWidth) setContentAspect(v.videoWidth / v.videoHeight);
+  updatePlayLabel();
+}
+function isPaused() {
+  const v = activeVideo();
+  return v ? v.paused : demoPaused;
+}
+function updatePlayLabel() {
+  $('btnPlay').textContent = isPaused() ? 'Play' : 'Pause';
+}
+function togglePlay() {
+  const v = activeVideo();
+  if (v) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
+  else demoPaused = !demoPaused;
+  updatePlayLabel();
+}
+function nextDemoScene() {
+  if (source !== 'demo') return;
+  demoTime = (Math.floor(demoTime / SCENE_LEN) + 1) * SCENE_LEN;
+}
+
+$('btnDemo').onclick = () => setSource('demo');
+$('btnVideo').onclick = () => $('fileVideo').click();
+$('btnPlay').onclick = togglePlay;
+for (const v of [video, streamVideo]) {
+  v.addEventListener('play', updatePlayLabel);
+  v.addEventListener('pause', updatePlayLabel);
+  const fit = () => { if (activeVideo() === v && v.videoWidth) setContentAspect(v.videoWidth / v.videoHeight); };
+  v.addEventListener('loadedmetadata', fit);
+  v.addEventListener('resize', fit);
+}
+
+// ---------------------------------------------------------------------------
+// PC stream receiver (WebRTC via PeerJS). The sender page on the PC calls us with a screen/tab capture.
+// ---------------------------------------------------------------------------
+let peer = null, streamCode = '', streamState = 'off';
+function setStreamInfo(msg) { $('streamInfo').textContent = msg; menuDirty = true; }
+function startReceiver() {
+  if (peer) return;
+  if (typeof Peer === 'undefined') { setStreamInfo('PeerJS failed to load (offline?)'); return; }
+  streamCode = String(Math.floor(1000 + Math.random() * 9000));
+  streamState = 'waiting';
+  peer = new Peer('is3meo-' + streamCode);
+  setStreamInfo('Code: ' + streamCode + ' - waiting for the sender...');
+  $('btnStream').textContent = 'Code ' + streamCode;
+  peer.on('error', (e) => {
+    if (e.type === 'unavailable-id') { peer.destroy(); peer = null; startReceiver(); return; }
+    setStreamInfo('Stream error: ' + e.type);
+  });
+  peer.on('call', (call) => {
+    call.answer(); // receive only
+    call.on('stream', (ms) => {
+      streamVideo.srcObject = ms;
+      if (!streamTex) { streamTex = new THREE.VideoTexture(streamVideo); streamTex.colorSpace = THREE.SRGBColorSpace; }
+      streamState = 'live';
+      $('srcName').textContent = 'PC stream (code ' + streamCode + ')';
+      setSource('stream');
+      streamVideo.play().then(() => setStreamInfo('Live - code ' + streamCode))
+        .catch(() => setStreamInfo('Connected - press Play to start (browser needs a tap)'));
+    });
+    call.on('close', () => { streamState = 'waiting'; setStreamInfo('Sender disconnected - code ' + streamCode + ' still open'); });
+  });
+}
+$('btnStream').onclick = () => { if (!peer) startReceiver(); else if (streamTex) setSource('stream'); };
+
+$('fileVideo').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (video.src) URL.revokeObjectURL(video.src);
+  video.src = URL.createObjectURL(f);
+  video.play().catch(() => {});
+  if (!videoTex) { videoTex = new THREE.VideoTexture(video); videoTex.colorSpace = THREE.SRGBColorSpace; }
+  $('srcName').textContent = 'Video: ' + f.name;
+  video.muted = false;
+  setSource('video');
+  e.target.value = '';
+});
+
+$('btnGlb').onclick = () => $('fileGlb').click();
+$('fileGlb').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  setStatus('Loading ' + f.name + '...');
+  const buf = await f.arrayBuffer();
+  loader.parse(buf, '', (gltf) => loadRoomFromGltf(gltf, f.name), (err) => setStatus('GLB load failed: ' + (err.message || err), true));
+  e.target.value = '';
+});
+function bindKitInput(btn, input, which) {
+  $(btn).onclick = () => $(input).click();
+  $(input).addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (!seatGroup) { setStatus('Load the default room first (the seat kit uses its layout)', true); e.target.value = ''; return; }
+    setStatus('Loading ' + f.name + '...');
+    const buf = await f.arrayBuffer();
+    loader.parse(buf, '', (gltf) => loadKitPart(which, gltf, f.name), (err) => setStatus('GLB failed: ' + (err.message || err), true));
+    e.target.value = '';
+  });
+}
+bindKitInput('btnSeat', 'fileSeat', 'seat');
+bindKitInput('btnArm', 'fileArm', 'arm');
+$('btnKitReset').onclick = () => { kit.seat = kit.arm = null; buildSeatMeshes(); loadRepoKit(); };
+$('btnKitDownload').onclick = () => downloadSeatKit();
+$('btnRoom').onclick = () => { clearRoom(); buildDefaultRoom(); setStatus('Default room'); };
+
+let uiHidden = false;
+function toggleUi() {
+  uiHidden = !uiHidden;
+  $('panel').style.display = uiHidden ? 'none' : '';
+  $('hudLabel').style.display = (uiHidden || !showDebug) ? 'none' : '';
+}
+
+$('btnReset').onclick = () => resetView();
+$('btnAbout').onclick = () => $('about').classList.remove('hidden');
+$('btnAboutClose').onclick = () => $('about').classList.add('hidden');
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
+  if (e.code === 'KeyL') setSpill(spillU.uSpillOn.value < 0.5);
+  if (e.code === 'KeyN') nextDemoScene();
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'KeyH') toggleUi();
+  if (e.code === 'KeyR') resetView();
+  keys.add(e.code);
+});
+window.addEventListener('keyup', (e) => keys.delete(e.code));
+window.addEventListener('blur', () => keys.clear());
+
+// ---------------------------------------------------------------------------
+// Desktop navigation: WASD fly, drag to look, wheel = FOV
+// ---------------------------------------------------------------------------
+const keys = new Set();
+const _f = new THREE.Vector3(), _r = new THREE.Vector3(), _m = new THREE.Vector3();
+function updateDesktop(dt) {
+  const fast = keys.has('ShiftLeft') || keys.has('ShiftRight');
+  const sp = (fast ? 8 : 3) * dt;
+  _f.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+  _r.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
+  _m.set(0, 0, 0);
+  if (keys.has('KeyW') || keys.has('ArrowUp')) _m.add(_f);
+  if (keys.has('KeyS') || keys.has('ArrowDown')) _m.sub(_f);
+  if (keys.has('KeyD') || keys.has('ArrowRight')) _m.add(_r);
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) _m.sub(_r);
+  if (keys.has('KeyE')) _m.y += 1;
+  if (keys.has('KeyQ')) _m.y -= 1;
+  if (_m.lengthSq() > 0) camera.position.addScaledVector(_m.normalize(), sp);
+  clampToRoom(camera.position, 1.15); // keep the desktop eye at least at seated height
+}
+
+let dragging = false, lastX = 0, lastY = 0;
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', (e) => {
+  if (!dragging || renderer.xr.isPresenting) return;
+  const s = 0.0025 * (camera.fov / 60);
+  camYaw -= (e.clientX - lastX) * s;
+  camPitch = THREE.MathUtils.clamp(camPitch - (e.clientY - lastY) * s, -1.5, 1.5);
+  lastX = e.clientX; lastY = e.clientY;
+  applyCamRot();
+});
+cv.addEventListener('pointerup', () => { dragging = false; });
+cv.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  if (renderer.xr.isPresenting) return;
+  camera.fov = THREE.MathUtils.clamp(camera.fov + Math.sign(e.deltaY) * 3, 20, 100);
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+// ---------------------------------------------------------------------------
+// VR navigation: left stick move, right stick snap turn / up-down, A/X reset
+// ---------------------------------------------------------------------------
+const SNAP = Math.PI / 6;
+const TURN_SPEED = THREE.MathUtils.degToRad(110); // smooth turn, deg per second
+let smoothTurn = true;
+let snapReady = true;
+const prevBtn = {};
+const _head = new THREE.Vector3(), _dir = new THREE.Vector3(), _side = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const dz = (v) => (Math.abs(v) < 0.15 ? 0 : v);
+
+function snapTurn(angle, pivot) {
+  _q.setFromAxisAngle(Y_AXIS, angle);
+  dolly.position.sub(pivot).applyQuaternion(_q).add(pivot);
+  dolly.quaternion.premultiply(_q);
+}
+
+// ---------------------------------------------------------------------------
+// In-VR menu (floating panel). Y = show/hide, L-stick select, R-stick adjust, A/trigger confirm
+// ---------------------------------------------------------------------------
+const menuCanvas = document.createElement('canvas');
+menuCanvas.width = 512; menuCanvas.height = 800;
+const menuCtx = menuCanvas.getContext('2d');
+const menuTex = new THREE.CanvasTexture(menuCanvas);
+menuTex.colorSpace = THREE.SRGBColorSpace;
+const menuMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.4, 0.4 * 800 / 512),
+  new THREE.MeshBasicMaterial({ map: menuTex, transparent: true, toneMapped: false, depthTest: false })
+);
+menuMesh.renderOrder = 999;
+menuMesh.visible = false;
+scene.add(menuMesh);
+let menuSel = 0, menuDirty = true, menuTimer = 0;
+
+function sliderItem(label, id, fmt) {
+  const el = $(id);
+  return {
+    label,
+    value: () => fmt(parseFloat(el.value)),
+    adjust: (dir) => {
+      const min = +el.min, max = +el.max, st = +el.step;
+      const step = Math.max(st, (max - min) / 40);
+      let v = THREE.MathUtils.clamp(parseFloat(el.value) + dir * step, min, max);
+      v = Math.round(v / st) * st;
+      el.value = v;
+      el.dispatchEvent(new Event('input')); // keeps the desktop panel in sync
+    },
+  };
+}
+const toggleSpillItem = () => setSpill(spillU.uSpillOn.value < 0.5);
+const MENU = [
+  { label: 'Light spill', value: () => (spillU.uSpillOn.value > 0.5 ? 'ON' : 'OFF'), adjust: toggleSpillItem, act: toggleSpillItem },
+  sliderItem('Screen size', 'sSize', (x) => Math.round(x * 100) + '%'),
+  sliderItem('Curvature', 'sCurve', (x) => x + '\u00b0'),
+  sliderItem('Intensity', 'sInt', (x) => x.toFixed(1)),
+  sliderItem('Specular', 'sSpec', (x) => x.toFixed(2)),
+  sliderItem('Smoothing', 'sSmooth', (x) => x + ' ms'),
+  sliderItem('Blur passes', 'sBlur', (x) => String(x)),
+  sliderItem('Ambient', 'sAmb', (x) => x.toFixed(2)),
+  {
+    label: 'Zones', value: () => $('sZones').value,
+    adjust: (d) => {
+      const el = $('sZones');
+      el.selectedIndex = (el.selectedIndex + d + el.options.length) % el.options.length;
+      el.dispatchEvent(new Event('change'));
+    },
+  },
+  {
+    label: 'Source', value: () => (source === 'demo' ? 'demo' : source === 'video' ? 'file' : 'PC stream'),
+    adjust: () => {
+      const order = ['demo'].concat(videoTex ? ['video'] : [], streamTex ? ['stream'] : []);
+      setSource(order[(order.indexOf(source) + 1) % order.length]);
+    },
+  },
+  { label: 'Demo scene', value: () => (source === 'demo' ? SCENES[Math.max(0, lastSceneIdx)] : '-'), adjust: (d) => { if (d > 0) nextDemoScene(); }, act: nextDemoScene },
+  { label: 'Play / Pause', value: () => (isPaused() ? 'paused' : 'playing'), act: togglePlay },
+  { label: 'PC stream', value: () => (peer ? streamCode + ' ' + streamState : 'off'), act: () => { if (!peer) startReceiver(); else if (streamTex) setSource('stream'); } },
+  { label: 'Turn', value: () => (smoothTurn ? 'smooth' : 'snap 30\u00b0'), adjust: () => { smoothTurn = !smoothTurn; }, act: () => { smoothTurn = !smoothTurn; } },
+  { label: 'Reset view', value: () => '', act: () => { closeMenu(); resetView(); } },
+  { label: 'Close menu', value: () => '', act: () => closeMenu() },
+];
+
+function drawMenu() {
+  const c = menuCtx, W = 512, H = 800;
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = 'rgba(12,14,20,0.93)';
+  c.strokeStyle = '#ffb347'; c.lineWidth = 3;
+  c.beginPath();
+  if (c.roundRect) c.roundRect(4, 4, W - 8, H - 8, 24); else c.rect(4, 4, W - 8, H - 8);
+  c.fill(); c.stroke();
+  c.textBaseline = 'middle';
+  c.textAlign = 'left'; c.fillStyle = '#ffb347'; c.font = 'bold 30px system-ui, sans-serif';
+  c.fillText('Light Spill Lab', 28, 48);
+  c.textAlign = 'right'; c.fillStyle = '#8a90a2'; c.font = '20px monospace';
+  c.fillText('v' + APP_VERSION + '  ' + fps + ' fps', W - 28, 48);
+  const y0 = 84, rh = 38;
+  MENU.forEach((it, i) => {
+    const y = y0 + i * rh;
+    if (i === menuSel) { c.fillStyle = 'rgba(255,179,71,0.18)'; c.fillRect(16, y, W - 32, rh - 4); }
+    c.textAlign = 'left'; c.fillStyle = i === menuSel ? '#ffffff' : '#dfe3ee'; c.font = '24px system-ui, sans-serif';
+    c.fillText(it.label, 30, y + rh / 2 - 2);
+    c.textAlign = 'right'; c.fillStyle = i === menuSel ? '#ffb347' : '#8a90a2'; c.font = '22px monospace';
+    c.fillText(it.value(), W - 30, y + rh / 2 - 2);
+  });
+  c.textAlign = 'left'; c.fillStyle = '#8a90a2'; c.font = '17px system-ui, sans-serif';
+  c.fillText('L-stick: select   R-stick: adjust', 28, H - 62);
+  c.fillText('A / trigger: confirm   Y: hide menu', 28, H - 34);
+  menuTex.needsUpdate = true;
+}
+
+function openMenu() {
+  if (leftGrip) {
+    // Clipboard style panel above the left controller: always with you
+    leftGrip.add(menuMesh);
+    menuMesh.scale.setScalar(0.6);
+    menuMesh.position.set(0, 0.22, -0.02);
+    menuMesh.rotation.set(-0.5, 0, 0);
+  } else {
+    // Fallback: float in front of the head
+    scene.add(menuMesh);
+    menuMesh.scale.setScalar(1);
+    camera.getWorldPosition(_head);
+    camera.getWorldDirection(_dir);
+    _dir.y = 0; if (_dir.lengthSq() < 1e-6) _dir.set(0, 0, -1); _dir.normalize();
+    menuMesh.position.copy(_head).addScaledVector(_dir, 0.5);
+    menuMesh.position.y -= 0.12;
+    menuMesh.lookAt(_head);
+  }
+  menuMesh.visible = true;
+  menuDirty = true;
+}
+function closeMenu() { menuMesh.visible = false; }
+function toggleMenu() { if (menuMesh.visible) closeMenu(); else openMenu(); }
+
+function updateMenu(dt) {
+  if (!menuMesh.visible) return;
+  menuTimer -= dt;
+  if (menuDirty || menuTimer <= 0) { drawMenu(); menuDirty = false; menuTimer = 0.5; }
+}
+
+let navCd = 0, adjCd = 0;
+function updateXR(dt) {
+  const session = renderer.xr.getSession();
+  if (!session) return;
+  // Head pose in world space. The user camera is a child of the rig (dolly), so this includes
+  // the rig offset. (v0.5.0 used the XR array camera, whose position is rig-local: the room clamp
+  // then kept pushing the rig upward when you stood up.)
+  camera.getWorldPosition(_head);
+  camera.getWorldDirection(_dir);
+  _dir.y = 0;
+  if (_dir.lengthSq() < 1e-6) _dir.set(0, 0, -1);
+  _dir.normalize();
+  _side.set(-_dir.z, 0, _dir.x);
+  const before = dolly.position.clone();
+
+  // Read sticks and buttons (xr-standard: axes 2/3 = thumbstick, button 4 = A/X, 5 = B/Y)
+  const L = { x: 0, y: 0 }, R = { x: 0, y: 0 }, btn = {};
+  for (const src of session.inputSources) {
+    const gp = src.gamepad;
+    if (!gp || !src.handedness) continue;
+    const st = src.handedness === 'left' ? L : R;
+    st.x = dz(gp.axes.length >= 4 ? gp.axes[2] : gp.axes[0] || 0);
+    st.y = dz(gp.axes.length >= 4 ? gp.axes[3] : gp.axes[1] || 0);
+    btn[src.handedness + '_4'] = !!(gp.buttons[4] && gp.buttons[4].pressed);
+    btn[src.handedness + '_5'] = !!(gp.buttons[5] && gp.buttons[5].pressed);
+  }
+  const edge = (k) => btn[k] && !prevBtn[k];
+
+  if (edge('left_5')) toggleMenu(); // Y
+
+  if (menuMesh.visible) {
+    navCd -= dt; adjCd -= dt;
+    if (Math.abs(L.y) > 0.5) {
+      if (navCd <= 0) { menuSel = (menuSel + (L.y > 0 ? 1 : -1) + MENU.length) % MENU.length; navCd = 0.22; menuDirty = true; }
+    } else navCd = 0;
+    if (Math.abs(R.x) > 0.5) {
+      const it = MENU[menuSel];
+      if (adjCd <= 0 && it.adjust) { it.adjust(R.x > 0 ? 1 : -1); adjCd = 0.15; menuDirty = true; }
+    } else adjCd = 0;
+    if (edge('right_4')) { menuConfirm(); }
+  } else {
+    dolly.position.addScaledVector(_dir, -L.y * 2.2 * dt).addScaledVector(_side, L.x * 2.2 * dt);
+    dolly.position.y += -R.y * 1.5 * dt;
+    if (smoothTurn) {
+      if (R.x !== 0) snapTurn(-R.x * TURN_SPEED * dt, _head); // smooth yaw around the head
+    } else {
+      if (Math.abs(R.x) > 0.7 && snapReady) { snapTurn(R.x > 0 ? -SNAP : SNAP, _head); snapReady = false; }
+      else if (Math.abs(R.x) < 0.3) snapReady = true;
+    }
+    if (edge('left_4') || edge('right_4')) resetView(); // X / A
+  }
+  Object.assign(prevBtn, btn);
+
+  // Keep the head inside the room
+  const headAfter = _head.clone().add(dolly.position).sub(before);
+  const clamped = headAfter.clone();
+  clampToRoom(clamped, 0.3);
+  dolly.position.add(clamped.sub(headAfter));
+}
+
+// Debug hook: preview the VR menu texture from the browser console
+window.lslDebug = { menuPreview: () => { drawMenu(); return menuCanvas.toDataURL(); } };
+
+function menuConfirm() {
+  const it = MENU[menuSel];
+  if (it.act) it.act(); else if (it.adjust) it.adjust(1);
+  menuDirty = true;
+}
+
+// ---------------------------------------------------------------------------
+// XR: seat the viewer, controllers
+// ---------------------------------------------------------------------------
+const savedCamPos = new THREE.Vector3();
+let savedFov = 60;
+renderer.xr.addEventListener('sessionstart', () => {
+  savedCamPos.copy(camera.position);
+  savedFov = camera.fov;
+  dolly.position.copy(seat.floor);
+  dolly.rotation.set(0, seat.yaw, 0);
+});
+renderer.xr.addEventListener('sessionend', () => {
+  closeMenu();
+  dolly.position.set(0, 0, 0);
+  dolly.rotation.set(0, 0, 0);
+  camera.position.copy(savedCamPos);
+  applyCamRot();
+  camera.fov = savedFov;
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+// Controller models + grips (the menu docks on the left grip)
+const controllerModelFactory = new XRControllerModelFactory();
+let leftGrip = null;
+for (let i = 0; i < 2; i++) {
+  const grip = renderer.xr.getControllerGrip(i);
+  grip.add(controllerModelFactory.createControllerModel(grip));
+  grip.addEventListener('connected', (e) => { if (e.data && e.data.handedness === 'left') leftGrip = grip; });
+  grip.addEventListener('disconnected', () => { if (leftGrip === grip) leftGrip = null; });
+  dolly.add(grip);
+}
+for (let i = 0; i < 2; i++) {
+  const c = renderer.xr.getController(i);
+  c.addEventListener('selectstart', () => { if (menuMesh.visible) menuConfirm(); else setSpill(spillU.uSpillOn.value < 0.5); });
+  c.addEventListener('squeezestart', () => { if (!menuMesh.visible) nextDemoScene(); });
+  dolly.add(c);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  layoutHud();
+});
+
+// ---------------------------------------------------------------------------
+// Main loop
+// ---------------------------------------------------------------------------
+buildDefaultRoom();
+setStatus('Default room');
+loadRepoKit();
+
+let last = performance.now();
+let fps = 0, fpsFrames = 0, fpsTime = 0;
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  fpsFrames++; fpsTime += dt;
+  if (fpsTime >= 0.5) { fps = Math.round(fpsFrames / fpsTime); fpsFrames = 0; fpsTime = 0; $('fps').textContent = fps + ' fps'; }
+
+  if (source === 'demo') {
+    if (!demoPaused) demoTime += dt;
+    const si = drawDemo(demoTime);
+    demoTex.needsUpdate = true;
+    if (si !== lastSceneIdx) { lastSceneIdx = si; $('srcName').textContent = 'Demo reel: ' + SCENES[si]; }
+  }
+
+  computeSpill(dt);
+
+  if (renderer.xr.isPresenting) { updateXR(dt); updateMenu(dt); } else updateDesktop(dt);
+  renderer.autoClear = true;
+  renderer.render(scene, camera);
+
+  if (showDebug && !uiHidden && !renderer.xr.isPresenting) {
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(hudScene, hudCam);
+    renderer.autoClear = true;
+  }
+});
+</script>
+</body>
+</html>
