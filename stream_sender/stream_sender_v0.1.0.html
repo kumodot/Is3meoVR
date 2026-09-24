@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is3meo Stream Sender v0.1.0</title>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  :root { --bg: #0b0c10; --card: #151821; --line: #262b36; --fg: #e4e7ef; --dim: #8b91a3; --acc: #ffb347; --ok: #7fd48a; --bad: #ff7a6b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  h1 { margin: 0; font-size: 26px; } h1 span { color: var(--acc); }
+  .ver { font-family: ui-monospace, monospace; color: var(--dim); }
+  p { color: var(--dim); line-height: 1.5; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 16px; }
+  label { display: block; color: var(--dim); font-size: 13px; margin-bottom: 6px; }
+  input, select { background: #0f1117; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px; }
+  #code { width: 140px; font-family: ui-monospace, monospace; letter-spacing: 4px; text-align: center; }
+  .row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  button { background: var(--acc); color: #1a1004; border: 0; border-radius: 10px; padding: 12px 20px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  button.ghost { background: none; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #status { margin-top: 12px; font-family: ui-monospace, monospace; font-size: 14px; color: var(--dim); }
+  #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+  video { width: 100%; border-radius: 10px; background: #000; margin-top: 14px; display: none; }
+  ul { color: var(--dim); line-height: 1.6; padding-left: 20px; }
+  footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  a { color: var(--acc); }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal.hidden { display: none; }
+  .modal .card { max-width: 360px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Is3meo <span>// Stream Sender</span></h1>
+    <div class="ver" id="ver"></div>
+  </header>
+  <p>Run this page on your PC. It captures a browser tab, window or screen and streams it over WebRTC to the cinema on the Quest, where it plays on the big screen with light spill.</p>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="code">Code shown on the Quest</label>
+        <input id="code" maxlength="4" inputmode="numeric" placeholder="0000">
+      </div>
+      <div>
+        <label for="bitrate">Max bitrate</label>
+        <select id="bitrate">
+          <option value="8000000">8 Mbps</option>
+          <option value="15000000" selected>15 Mbps</option>
+          <option value="25000000">25 Mbps</option>
+        </select>
+      </div>
+      <div>
+        <label for="fpsSel">Frame rate</label>
+        <select id="fpsSel">
+          <option value="30">30 fps</option>
+          <option value="60" selected>60 fps</option>
+        </select>
+      </div>
+      <button id="btnStart">Choose & send</button>
+      <button id="btnStop" class="ghost" disabled>Stop</button>
+    </div>
+    <div id="status">Idle</div>
+    <video id="preview" muted playsinline></video>
+  </div>
+
+  <div class="card">
+    <b>How to</b>
+    <ul>
+      <li>On the Quest: open the Light Spill Lab (v0.5.0+), press <b>Receive stream</b> and note the 4 digit code.</li>
+      <li>Here: type the code, press <b>Choose & send</b> and pick what to share.</li>
+      <li><b>Audio:</b> sharing a <b>Chrome tab</b> (e.g. web.stremio.com) sends its audio. For a desktop app window, share the <b>Entire screen</b> and tick <b>Share system audio</b>.</li>
+      <li>Quest and PC should be on the same network. Keep this tab open while streaming.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <div>Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
+    <div><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a> &nbsp; <button class="ghost" id="btnAbout" style="padding:6px 12px;font-size:14px">About</button></div>
+  </footer>
+</div>
+
+<div id="about" class="modal hidden">
+  <div class="card">
+    <h2 style="margin-top:0">Is3meo Stream Sender</h2>
+    <div class="ver" id="aboutVer"></div>
+    <p>Sends a PC tab, window or screen to the Is3meoVR cinema over WebRTC (PeerJS signaling).</p>
+    <p style="color:var(--fg)">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</p>
+    <p><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a></p>
+    <button class="ghost" id="btnClose">Close</button>
+  </div>
+</div>
+
+<script>
+const APP_VERSION = '0.1.0';
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'v' + APP_VERSION;
+$('aboutVer').textContent = 'v' + APP_VERSION;
+$('btnAbout').onclick = () => $('about').classList.remove('hidden');
+$('btnClose').onclick = () => $('about').classList.add('hidden');
+
+let peer = null, call = null, stream = null;
+
+function status(msg, cls = '') { const el = $('status'); el.textContent = msg; el.className = cls; }
+
+// Push bitrate / framerate limits into the video sender (WebRTC defaults are conservative)
+async function tuneSender(pc) {
+  const maxBitrate = +$('bitrate').value, maxFramerate = +$('fpsSel').value;
+  for (const s of pc.getSenders()) {
+    if (!s.track || s.track.kind !== 'video') continue;
+    const p = s.getParameters();
+    if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+    p.encodings[0].maxBitrate = maxBitrate;
+    p.encodings[0].maxFramerate = maxFramerate;
+    p.degradationPreference = 'maintain-resolution';
+    try { await s.setParameters(p); } catch (e) { /* not ready yet, retried on connect */ }
+  }
+}
+
+async function start() {
+  const code = $('code').value.trim();
+  if (!/^\d{4}$/.test(code)) { status('Type the 4 digit code shown on the Quest', 'bad'); return; }
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: +$('fpsSel').value }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: true,
+    });
+  } catch (e) { status('Capture cancelled', 'bad'); return; }
+  const vt = stream.getVideoTracks()[0];
+  if (vt) { vt.contentHint = 'motion'; vt.onended = stop; }
+  $('preview').srcObject = stream; $('preview').style.display = 'block'; $('preview').play();
+  const hasAudio = stream.getAudioTracks().length > 0;
+
+  status('Connecting to signaling...');
+  peer = new Peer();
+  peer.on('error', (e) => status('Error: ' + e.type + (e.type === 'peer-unavailable' ? ' (check the code, is the Quest waiting?)' : ''), 'bad'));
+  peer.on('open', () => {
+    status('Calling the Quest (code ' + code + ')...');
+    call = peer.call('is3meo-' + code, stream);
+    const pc = call.peerConnection;
+    tuneSender(pc);
+    pc.addEventListener('connectionstatechange', () => {
+      if (pc.connectionState === 'connected') {
+        tuneSender(pc);
+        status('Live' + (hasAudio ? ' with audio' : ' (no audio track, see How to)') + ' - ' + (vt ? vt.getSettings().width + 'x' + vt.getSettings().height : ''), 'ok');
+      } else if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
+        status('Connection ' + pc.connectionState, 'bad');
+      }
+    });
+    call.on('close', () => status('Call closed'));
+  });
+  $('btnStart').disabled = true; $('btnStop').disabled = false;
+}
+
+function stop() {
+  if (call) call.close();
+  if (peer) peer.destroy();
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  call = peer = stream = null;
+  $('preview').style.display = 'none';
+  $('btnStart').disabled = false; $('btnStop').disabled = true;
+  status('Stopped');
+}
+
+$('btnStart').onclick = start;
+$('btnStop').onclick = stop;
+</script>
+</body>
+</html>

@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.5.0 | PC stream receiver, screen size, auto aspect, custom seat GLB |
+| Stream Sender | 0.1.0 | PC page that streams a tab/window/screen to the cinema (WebRTC) |
 | Light Spill Lab | 0.4.0 | Curved screen with live curvature control, FPS counter |
 | Light Spill Lab | 0.3.0 | In-VR menu, VR locomotion, WASD + FOV zoom, room collision, reset view, seat specular |
 | Light Spill Lab | 0.2.0 | Rounded seats, lit ceiling clouds, hide UI with H |
