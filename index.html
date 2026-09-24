@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StremioVR Dev Launcher</title>
+<style>
+  :root {
+    --bg: #0b0c10; --card: #151821; --line: #262b36; --fg: #e4e7ef; --dim: #8b91a3; --acc: #ffb347; --ok: #7fd48a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 30px; letter-spacing: 0.3px; }
+  h1 span { color: var(--acc); }
+  .ver { font-family: ui-monospace, monospace; color: var(--dim); font-size: 14px; }
+  .intro { color: var(--dim); font-size: 16px; line-height: 1.5; margin: 10px 0 26px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--acc); margin: 30px 0 12px; }
+  .hero {
+    display: block; text-decoration: none; color: var(--fg);
+    background: linear-gradient(135deg, #2a1a0c, #151821 60%); border: 2px solid var(--acc);
+    border-radius: 18px; padding: 26px 28px; transition: transform 0.12s;
+  }
+  .hero:hover, .hero:focus { transform: scale(1.015); outline: none; }
+  .hero .name { font-size: 28px; font-weight: 700; }
+  .hero .meta { color: var(--acc); font-family: ui-monospace, monospace; margin: 6px 0 10px; font-size: 15px; }
+  .hero .notes { color: var(--dim); font-size: 16px; line-height: 1.45; }
+  .hero .go { margin-top: 16px; display: inline-block; background: var(--acc); color: #1a1004; font-weight: 700; padding: 12px 22px; border-radius: 10px; font-size: 18px; }
+  .list { display: grid; gap: 12px; }
+  .item {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; align-items: center;
+    text-decoration: none; color: var(--fg); background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 18px 20px; min-height: 72px;
+  }
+  .item:hover, .item:focus { border-color: var(--acc); outline: none; }
+  .item .name { font-size: 18px; font-weight: 600; }
+  .item .notes { grid-column: 1 / -1; color: var(--dim); font-size: 14px; line-height: 1.4; }
+  .item .v { font-family: ui-monospace, monospace; color: var(--dim); font-size: 14px; }
+  .badge { font-size: 11px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); margin-left: 8px; vertical-align: middle; }
+  .badge.vr { color: var(--ok); border-color: #2f5a36; }
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  footer a { color: var(--acc); text-decoration: none; }
+  button.about { background: none; border: 1px solid var(--line); color: var(--fg); border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal.hidden { display: none; }
+  .card { background: #12151c; border: 1px solid #2a2f3a; border-radius: 16px; padding: 26px; max-width: 380px; text-align: center; }
+  .card p { color: var(--dim); line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>StremioVR <span>// Dev Launcher</span></h1>
+    <div class="ver" id="ver"></div>
+  </header>
+  <p class="intro">Test builds for the Quest 3 virtual cinema. Put on the headset, open this page in the Quest Browser, tap a build, then hit <b>Enter VR</b>. Links always load fresh (no cache), so you are looking at the latest push.</p>
+
+  <h2>Latest</h2>
+  <div id="latest"></div>
+
+  <h2>All builds</h2>
+  <div class="list" id="list"></div>
+
+  <footer>
+    <div>Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
+    <div>
+      <a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a>
+      &nbsp; <button class="about" id="btnAbout">About</button>
+    </div>
+  </footer>
+</div>
+
+<div id="about" class="modal hidden">
+  <div class="card">
+    <h2 style="margin-top:0">StremioVR Dev Launcher</h2>
+    <div class="ver" id="aboutVer"></div>
+    <p>Build index for the StremioVR project: a Quest 3 virtual cinema with screen light spill, starting with Stremio and growing into a full media room.</p>
+    <p style="color:var(--fg)">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</p>
+    <p><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener" style="color:var(--acc)">Support Marcelo Souza</a></p>
+    <button class="about" id="btnClose">Close</button>
+  </div>
+</div>
+
+<script>
+const LAUNCHER_VERSION = '1.0.0';
+
+// Add new builds at the top. The first entry is shown as "Latest".
+const BUILDS = [
+  {
+    name: 'Light Spill Lab', version: '0.2.0', date: '2026-09-24', vr: true,
+    path: 'light_spill_lab/light_spill_lab_v0.2.0.html',
+    notes: 'Rounded seats with armrests, tilted backrests, lit ceiling with acoustic clouds, H hides the UI.'
+  },
+  {
+    name: 'Light Spill Lab', version: '0.1.0', date: '2026-09-24', vr: true,
+    path: 'light_spill_lab/light_spill_lab_v0.1.0.html',
+    notes: 'First light spill prototype: screen zones as area lights, blur, temporal smoothing, GLB room and video file loading.'
+  },
+];
+
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'launcher v' + LAUNCHER_VERSION;
+$('aboutVer').textContent = 'v' + LAUNCHER_VERSION;
+
+const fresh = (p) => p + '?t=' + Date.now(); // cache buster for the Quest Browser
+const badges = (b) => b.vr ? '<span class="badge vr">VR</span>' : '';
+
+const L = BUILDS[0];
+$('latest').innerHTML = `
+  <a class="hero" href="${fresh(L.path)}">
+    <div class="name">${L.name}${badges(L)}</div>
+    <div class="meta">v${L.version} // ${L.date}</div>
+    <div class="notes">${L.notes}</div>
+    <span class="go">Open</span>
+  </a>`;
+
+$('list').innerHTML = BUILDS.map((b) => `
+  <a class="item" href="${fresh(b.path)}">
+    <div class="name">${b.name}${badges(b)}</div>
+    <div class="v">v${b.version} // ${b.date}</div>
+    <div class="notes">${b.notes}</div>
+  </a>`).join('');
+
+// Refresh cache busters when coming back to the page
+window.addEventListener('pageshow', () => {
+  document.querySelectorAll('a.hero, a.item').forEach((a) => {
+    a.href = a.getAttribute('href').replace(/\?t=\d+/, '?t=' + Date.now());
+  });
+});
+
+$('btnAbout').onclick = () => $('about').classList.remove('hidden');
+$('btnClose').onclick = () => $('about').classList.add('hidden');
+</script>
+</body>
+</html>

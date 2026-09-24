@@ -1,0 +1,36 @@
+# StremioVR
+
+A virtual cinema for Meta Quest 3, with a custom 3D theater and screen light spill (the movie lights up the room). Stremio is the first media source; local files and LAN sources come later.
+
+This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest Browser and tap any build to test it in VR.
+
+## Builds
+
+| Build | Version | What it is |
+|---|---|---|
+| Light Spill Lab | 0.2.0 | Rounded seats, lit ceiling clouds, hide UI with H |
+| Light Spill Lab | 0.1.0 | First screen light spill prototype (Three.js / WebXR) |
+
+## Run locally
+
+Double-click `run_launcher.bat` (needs Python). It serves the repo on port 8080 and opens the launcher.
+
+Quest over USB (developer mode + adb):
+
+```
+adb reverse tcp:8080 tcp:8080
+```
+
+Then open `http://localhost:8080/` in the Quest Browser.
+
+## Adding a new build
+
+1. Save it with the version in the file name, e.g. `light_spill_lab/light_spill_lab_v0.3.0.html`.
+2. Add an entry at the top of `BUILDS` in `index.html`.
+3. Push. GitHub Pages updates in about a minute.
+
+## Credits
+
+Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
+
+[Support Marcelo Souza](https://ko-fi.com/msouza3d)
