@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Is3meo Bridge | 0.7.1 | Opens Stream Sender 0.6.0 |
+| Stream Sender | 0.6.0 | Button Mapping on the controller blueprint with colored markers |
 | Light Spill Lab | 0.13.0 | MEDIA buttons + labels from the Bridge Button Mapping |
 | Is3meo Bridge | 0.7.0 | Button Mapping tab: draw-and-map the Quest buttons per app (with Stream Sender 0.5.0) |
 | Stream Sender | 0.5.0 | Button Mapping tab |

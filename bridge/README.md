@@ -38,9 +38,9 @@ The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked
 
 On the Quest (Light Spill Lab v0.12.0+) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
 
-## Button Mapping tab (v0.7.0)
+## Button Mapping tab (v0.7.0, blueprint layout in v0.7.1)
 
-Pick an app and you see both Quest controllers with the labels as they show in VR. Choose the layer (Normal, ALT L = left grip held, ALT R = right grip held), then for each button set the type (Key / Open app / Nothing), the label and the shortcut: click the key box and press it (Ctrl / Shift / Alt / Win work), or pick keys the browser keeps for itself (F11, media keys) from the list. X, Y, grips and stick clicks stay global.
+Pick an app: the left controller's commands are listed on the left, the right one's on the right, with the controller blueprint in the middle. Every button has its own color: pick a command (or click a button on the drawing, on a stick click the side you want) and its box lights up in that color while a matching dot pulses on the real button, with the label next to it. Choose the layer (Normal, ALT L = left grip held, ALT R = right grip held), then for each button set the type (Key / Open app / Nothing), the label and the shortcut: click the key box and press it (Ctrl / Shift / Alt / Win work), or pick keys the browser keeps for itself (F11, media keys) from the list. X, Y, grips and stick clicks stay global.
 
 **Save mapping** writes `bridge/profiles_user/<profile id>.json` and sends it to the Quest right away. **Reset to default** deletes it. If several apps share a profile, **Give <app> its own profile** splits it. **Share / JSON** shows the file to copy, or loads one someone sent you.
 
