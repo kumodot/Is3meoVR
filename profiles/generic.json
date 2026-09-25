@@ -1,0 +1,61 @@
+{
+  "id": "generic",
+  "name": "Generic (media keys)",
+  "app": "",
+  "version": 1,
+  "notes": "Windows media keys, works with most players and browsers.",
+  "actions": {
+    "playPause": {
+      "key": "MediaPlayPause",
+      "label": "Play/Pause"
+    },
+    "seekBack": {
+      "key": "ArrowLeft",
+      "label": "Seek -"
+    },
+    "seekFwd": {
+      "key": "ArrowRight",
+      "label": "Seek +"
+    },
+    "seekBackSmall": {
+      "key": "ArrowLeft",
+      "label": "Seek -"
+    },
+    "seekFwdSmall": {
+      "key": "ArrowRight",
+      "label": "Seek +"
+    },
+    "volUp": {
+      "key": "VolumeUp",
+      "label": "Vol +"
+    },
+    "volDown": {
+      "key": "VolumeDown",
+      "label": "Vol -"
+    },
+    "mute": {
+      "key": "VolumeMute",
+      "label": "Mute"
+    },
+    "fullscreen": {
+      "key": "F11",
+      "label": "Fullscreen"
+    },
+    "back": {
+      "key": "Escape",
+      "label": "Back"
+    },
+    "showUI": {
+      "key": "Space",
+      "label": "Play/Pause"
+    },
+    "next": {
+      "key": "MediaNextTrack",
+      "label": "Next"
+    },
+    "subSizeUp": null,
+    "subSizeDown": null,
+    "subDelayUp": null,
+    "subDelayDown": null
+  }
+}

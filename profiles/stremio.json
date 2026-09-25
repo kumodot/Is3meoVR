@@ -1,0 +1,82 @@
+{
+  "id": "stremio",
+  "name": "Stremio",
+  "app": "stremio",
+  "version": 1,
+  "notes": "Official Stremio shortcuts (stremio.zendesk.com, Shortcuts in Stremio).",
+  "actions": {
+    "playPause": {
+      "key": "Space",
+      "label": "Play/Pause"
+    },
+    "seekBack": {
+      "key": "ArrowLeft",
+      "label": "-20s"
+    },
+    "seekFwd": {
+      "key": "ArrowRight",
+      "label": "+20s"
+    },
+    "seekBackSmall": {
+      "key": "ArrowLeft",
+      "label": "-10s",
+      "mods": [
+        "Shift"
+      ]
+    },
+    "seekFwdSmall": {
+      "key": "ArrowRight",
+      "label": "+10s",
+      "mods": [
+        "Shift"
+      ]
+    },
+    "volUp": {
+      "key": "ArrowUp",
+      "label": "Vol +"
+    },
+    "volDown": {
+      "key": "ArrowDown",
+      "label": "Vol -"
+    },
+    "mute": {
+      "key": "VolumeMute",
+      "label": "Mute"
+    },
+    "fullscreen": {
+      "key": "KeyF",
+      "label": "Fullscreen"
+    },
+    "back": {
+      "key": "Escape",
+      "label": "Back"
+    },
+    "showUI": {
+      "key": "KeyT",
+      "label": "Player UI"
+    },
+    "next": {
+      "key": "KeyN",
+      "label": "Next episode",
+      "mods": [
+        "Shift"
+      ]
+    },
+    "subSizeUp": {
+      "key": "Equal",
+      "label": "Subs bigger"
+    },
+    "subSizeDown": {
+      "key": "Minus",
+      "label": "Subs smaller"
+    },
+    "subDelayUp": {
+      "key": "KeyH",
+      "label": "Subs +250ms"
+    },
+    "subDelayDown": {
+      "key": "KeyG",
+      "label": "Subs -250ms"
+    }
+  }
+}

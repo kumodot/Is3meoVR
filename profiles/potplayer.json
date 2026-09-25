@@ -1,0 +1,73 @@
+{
+  "id": "potplayer",
+  "name": "PotPlayer",
+  "app": "potplayer",
+  "version": 1,
+  "notes": "PotPlayer default hotkeys as far as we know. Edit if your setup differs.",
+  "actions": {
+    "playPause": {
+      "key": "Space",
+      "label": "Play/Pause"
+    },
+    "seekBack": {
+      "key": "ArrowLeft",
+      "label": "-30s",
+      "mods": [
+        "Control"
+      ]
+    },
+    "seekFwd": {
+      "key": "ArrowRight",
+      "label": "+30s",
+      "mods": [
+        "Control"
+      ]
+    },
+    "seekBackSmall": {
+      "key": "ArrowLeft",
+      "label": "-5s"
+    },
+    "seekFwdSmall": {
+      "key": "ArrowRight",
+      "label": "+5s"
+    },
+    "volUp": {
+      "key": "ArrowUp",
+      "label": "Vol +"
+    },
+    "volDown": {
+      "key": "ArrowDown",
+      "label": "Vol -"
+    },
+    "mute": {
+      "key": "KeyM",
+      "label": "Mute"
+    },
+    "fullscreen": {
+      "key": "Enter",
+      "label": "Fullscreen"
+    },
+    "back": {
+      "key": "Escape",
+      "label": "Back"
+    },
+    "showUI": {
+      "key": "Tab",
+      "label": "Info"
+    },
+    "next": {
+      "key": "PageDown",
+      "label": "Next file"
+    },
+    "subSizeUp": null,
+    "subSizeDown": null,
+    "subDelayUp": {
+      "key": "Period",
+      "label": "Subs +"
+    },
+    "subDelayDown": {
+      "key": "Comma",
+      "label": "Subs -"
+    }
+  }
+}

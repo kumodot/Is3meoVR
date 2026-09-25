@@ -1,0 +1,85 @@
+{
+  "id": "vlc",
+  "name": "VLC",
+  "app": "vlc",
+  "version": 1,
+  "notes": "VLC default hotkeys (Shift+arrow 3s, Alt+arrow 10s).",
+  "actions": {
+    "playPause": {
+      "key": "Space",
+      "label": "Play/Pause"
+    },
+    "seekBack": {
+      "key": "ArrowLeft",
+      "label": "-10s",
+      "mods": [
+        "Alt"
+      ]
+    },
+    "seekFwd": {
+      "key": "ArrowRight",
+      "label": "+10s",
+      "mods": [
+        "Alt"
+      ]
+    },
+    "seekBackSmall": {
+      "key": "ArrowLeft",
+      "label": "-3s",
+      "mods": [
+        "Shift"
+      ]
+    },
+    "seekFwdSmall": {
+      "key": "ArrowRight",
+      "label": "+3s",
+      "mods": [
+        "Shift"
+      ]
+    },
+    "volUp": {
+      "key": "ArrowUp",
+      "label": "Vol +",
+      "mods": [
+        "Control"
+      ]
+    },
+    "volDown": {
+      "key": "ArrowDown",
+      "label": "Vol -",
+      "mods": [
+        "Control"
+      ]
+    },
+    "mute": {
+      "key": "KeyM",
+      "label": "Mute"
+    },
+    "fullscreen": {
+      "key": "KeyF",
+      "label": "Fullscreen"
+    },
+    "back": {
+      "key": "Escape",
+      "label": "Leave fullscreen"
+    },
+    "showUI": {
+      "key": "KeyT",
+      "label": "Show time"
+    },
+    "next": {
+      "key": "KeyN",
+      "label": "Next"
+    },
+    "subSizeUp": null,
+    "subSizeDown": null,
+    "subDelayUp": {
+      "key": "KeyH",
+      "label": "Subs +"
+    },
+    "subDelayDown": {
+      "key": "KeyG",
+      "label": "Subs -"
+    }
+  }
+}

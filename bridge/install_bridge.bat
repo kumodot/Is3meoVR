@@ -1,5 +1,5 @@
 @echo off
-REM Is3meo Bridge installer - v0.1.0
+REM Is3meo Bridge installer - v0.2.0
 REM Installs Playwright for Python. The Bridge uses your installed Google Chrome.
 cd /d "%~dp0"
 python -m pip install --upgrade playwright
