@@ -17,7 +17,7 @@
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 16px; }
   label { display: block; color: var(--dim); font-size: 13px; margin-bottom: 6px; }
   input, select { background: #0f1117; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px; }
-  #code { width: 140px; font-family: ui-monospace, monospace; letter-spacing: 4px; text-align: center; font-size: 26px; }
+  #code { width: 230px; font-family: ui-monospace, monospace; letter-spacing: 4px; text-align: center; font-size: 26px; }
   .row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
   button { background: var(--acc); color: #1a1004; border: 0; border-radius: 10px; padding: 12px 20px; font-size: 16px; font-weight: 700; cursor: pointer; }
   button.ghost { background: none; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
@@ -49,7 +49,7 @@
     <div class="row">
       <div>
         <label for="code">PC code (type it once on the Quest)</label>
-        <input id="code" maxlength="4" inputmode="numeric">
+        <input id="code" maxlength="16" autocapitalize="off">
       </div>
       <div>
         <label for="bitrate">Max bitrate</label>
@@ -121,14 +121,15 @@ if (qs.get('bitrate')) $('bitrate').value = qs.get('bitrate');
 $('badge').textContent = hasBridge ? 'on (Bridge)' : 'off (no Bridge)';
 $('badge').className = hasBridge ? 'on' : '';
 
-let code = qs.get('code') || lsGet('is3meo.pcCode', '') || String(Math.floor(1000 + Math.random() * 9000));
+const randomCode = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
+let code = qs.get('code') || lsGet('is3meo.pcCode', '') || randomCode();
 $('code').value = code;
 let peer = null, questConn = null, call = null, stream = null;
 
 function startPeer() {
   if (peer) peer.destroy();
   code = $('code').value.trim();
-  if (!/^\d{4}$/.test(code)) { status('The code must be 4 digits', 'bad'); return; }
+  if (!/^[A-Za-z0-9]{4,16}$/.test(code)) { status('The code must be 4 to 16 letters / digits (8+ recommended)', 'bad'); return; }
   lsSet('is3meo.pcCode', code);
   status('Registering PC ' + code + '...');
   peer = new Peer('is3meo-pc-' + code);

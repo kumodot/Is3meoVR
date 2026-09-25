@@ -2,7 +2,7 @@
 
 Small Windows helper that lets the Quest start and control the PC stream on its own.
 
-- Waits for the Quest with a **fixed 4 digit PC code** (saved in `is3meo_bridge_config.json`).
+- Waits for the Quest with a **fixed PC code (8 random characters, keep it private: it gives access to your screen and mouse)** (saved in `is3meo_bridge_config.json`).
 - When the Quest connects, it **starts sharing the screen by itself** (the browser auto-selects `capture_source`, "Screen 1" in Edge).
 - Opening it again closes older Bridge windows, so only one runs.
 - Turns the Quest **laser pointer and buttons into real mouse and keyboard input** on Windows (SendInput).

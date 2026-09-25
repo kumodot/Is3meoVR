@@ -27,7 +27,7 @@ CONFIG_VERSION = 3
 HERE = Path(__file__).resolve().parent
 CONFIG_PATH = HERE / 'is3meo_bridge_config.json'
 DEFAULTS = {
-    'code': None,                      # 4 digit PC code, created on first run
+    'code': None,                      # PC code (8 random letters/digits), created on first run
     'sender_url': 'https://kumodot.github.io/Is3meoVR/stream_sender/stream_sender_v0.3.0.html',
     'capture_source': 'Screen 1',       # title the browser auto-selects in the share picker (Edge: 'Screen 1')
     'audio_device': '',                 # recording device that carries the PC sound, e.g. 'VoiceMeeter Aux Output' ('' = share audio)
@@ -67,8 +67,11 @@ def load_config():
         cfg['config_version'] = CONFIG_VERSION
     for k, v in DEFAULTS.items():
         cfg.setdefault(k, v)
-    if not cfg.get('code') or not str(cfg['code']).isdigit() or len(str(cfg['code'])) != 4:
-        cfg['code'] = str(random.randint(1000, 9999))
+    code = str(cfg.get('code') or '')
+    if not code.isalnum() or len(code) < 8:
+        # Short codes can be guessed and the Bridge gives screen + mouse access: use 8 random characters
+        cfg['code'] = ''.join(random.SystemRandom().choice('abcdefghjkmnpqrstuvwxyz23456789') for _ in range(8))
+        print(f"New PC code: {cfg['code']} (type it once on the Quest)")
     CONFIG_PATH.write_text(json.dumps(cfg, indent=2), encoding='utf-8')
     return cfg
 
@@ -333,7 +336,7 @@ async def run(cfg):
         print()
         print('=' * 60)
         print(f'  Is3meo Bridge v{VERSION}  -  PC code: {cfg["code"]}')
-        print('  Type this code once on the Quest (Light Spill Lab v0.7.0+).')
+        print('  Type this code once on the Quest (Light Spill Lab v0.9.0+). Keep it private.')
         print('  Keep this window open. Ctrl+C to quit.')
         print('=' * 60)
         print()

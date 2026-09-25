@@ -79,7 +79,7 @@
 
   <div class="sec">PC link (Is3meo Bridge)</div>
   <div class="row">
-    <input id="pcCode" maxlength="4" inputmode="numeric" placeholder="code" style="width:70px;background:#0f1117;color:var(--fg);border:1px solid #343a47;border-radius:6px;padding:5px 8px;font-family:ui-monospace,monospace;letter-spacing:2px">
+    <input id="pcCode" maxlength="16" placeholder="PC code" autocapitalize="off" style="width:110px;background:#0f1117;color:var(--fg);border:1px solid #343a47;border-radius:6px;padding:5px 8px;font-family:ui-monospace,monospace;letter-spacing:2px">
     <button id="btnPc">Connect</button>
     <label class="chk" style="margin:0"><input type="checkbox" id="pcAuto" checked> Auto</label>
   </div>
@@ -1196,7 +1196,7 @@ function stereoSdp(sdp) {
 
 function connectPc() {
   const code = $('pcCode').value.trim();
-  if (!/^\d{4}$/.test(code)) { setStreamInfo('Type the 4 digit code shown by the Bridge on the PC'); return; }
+  if (!/^[A-Za-z0-9]{4,16}$/.test(code)) { setStreamInfo('Type the PC code shown by the Bridge on the PC'); return; }
   if (typeof Peer === 'undefined') { setStreamInfo('PeerJS failed to load (offline?)'); return; }
   disconnectPc(true);
   pcCode = code;
@@ -1268,7 +1268,7 @@ $('pcAuto').checked = lsGet('is3meo.pcAuto', '1') === '1';
 $('pcAuto').addEventListener('change', (e) => lsSet('is3meo.pcAuto', e.target.checked ? '1' : '0'));
 pcCode = $('pcCode').value;
 // Auto connect with the remembered code: open the page on the Quest and the PC starts sharing
-if ($('pcAuto').checked && /^\d{4}$/.test($('pcCode').value)) setTimeout(connectPc, 800);
+if ($('pcAuto').checked && /^[A-Za-z0-9]{4,16}$/.test($('pcCode').value)) setTimeout(connectPc, 800);
 
 
 $('fileVideo').addEventListener('change', (e) => {
