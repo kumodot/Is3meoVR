@@ -3,7 +3,8 @@
 Small Windows helper that lets the Quest start and control the PC stream on its own.
 
 - Waits for the Quest with a **fixed 4 digit PC code** (saved in `is3meo_bridge_config.json`).
-- When the Quest connects, it **starts sharing the screen by itself** (Chrome auto-selects "Entire screen").
+- When the Quest connects, it **starts sharing the screen by itself** (the browser auto-selects `capture_source`, "Screen 1" in Edge).
+- Opening it again closes older Bridge windows, so only one runs.
 - Turns the Quest **laser pointer and buttons into real mouse and keyboard input** on Windows (SendInput).
 - **Opens your player** when the Quest connects (`auto_open_app`, Stremio by default) or from the VR menu (**PC: open player app**, follows the selected player profile).
 - Moves the mouse cursor out of the picture when you press Play or leave PC mode.
@@ -36,7 +37,8 @@ See the controller hints in VR (they change with the mode and with ALT). Short v
 | Key | Default | Meaning |
 |---|---|---|
 | `code` | random | The PC code the Quest connects to |
-| `capture_source` | `Entire screen` | Title Chrome auto-picks in the share dialog (try `Screen 1` with more monitors) |
+| `capture_source` | `Screen 1` | Title the browser auto-picks in the share dialog (Edge: `Screen 1`, `Screen 2`...) |
+| `audio_device` | `""` | Recording device that carries the PC sound (e.g. `VoiceMeeter Aux Output`). Empty = screen share audio, which Edge does not send when the screen is auto-selected |
 | `bitrate` | 15000000 | Video bitrate in bits per second |
 | `apps` | auto | Exe paths per player id (`stremio`, `potplayer`, `vlc`, ...) if auto-detect fails |
 | `auto_open_app` | `stremio` | Player opened when the Quest connects (`""` = off) |
@@ -45,8 +47,8 @@ See the controller hints in VR (they change with the mode and with ALT). Short v
 ## Notes
 
 - The mouse maps to the **primary monitor**, which is what "Entire screen" captures.
-- Chrome shows a small "sharing your screen" bar; click **Hide** once.
-- Audio: with "Entire screen" Chrome sends system audio when available.
+- The browser shows a small "sharing your screen" bar; click **Hide** once.
+- Audio is sent in stereo (Opus, up to 256 kbps).
 
 Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
 

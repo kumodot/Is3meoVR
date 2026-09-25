@@ -8,6 +8,9 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.9.0 | Per-button labels, FLY / MEDIA / PC colors, smaller EXIT, door with panic bar, stereo |
+| Stream Sender | 0.3.0 | Audio from a recording device, stereo Opus |
+| Is3meo Bridge | 0.3.0 | Auto-select "Screen 1" (fixes the share picker), VoiceMeeter audio, single instance |
 | Light Spill Lab | 0.8.0 | Control modes + ALT layer, controller hints, player profiles, saved settings, favorite seats, EXIT sign |
 | Is3meo Bridge | 0.2.0 | Edge by default, key combos for profiles, cursor park, auto-open the player, start from the Quest |
 | Light Spill Lab | 0.7.0 | PC link with fixed code, laser pointer remote mouse, boost walk, new stick-click shortcuts |

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is3meo Stream Sender v0.3.0</title>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  :root { --bg: #0b0c10; --card: #151821; --line: #262b36; --fg: #e4e7ef; --dim: #8b91a3; --acc: #ffb347; --ok: #7fd48a; --bad: #ff7a6b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  h1 { margin: 0; font-size: 26px; } h1 span { color: var(--acc); }
+  .ver { font-family: ui-monospace, monospace; color: var(--dim); }
+  p { color: var(--dim); line-height: 1.5; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 16px; }
+  label { display: block; color: var(--dim); font-size: 13px; margin-bottom: 6px; }
+  input, select { background: #0f1117; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px; }
+  #code { width: 140px; font-family: ui-monospace, monospace; letter-spacing: 4px; text-align: center; font-size: 26px; }
+  .row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  button { background: var(--acc); color: #1a1004; border: 0; border-radius: 10px; padding: 12px 20px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  button.ghost { background: none; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #btnShare.pulse { animation: pulse 1s infinite alternate; }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(255,179,71,0.6); } to { box-shadow: 0 0 0 10px rgba(255,179,71,0); } }
+  #status { margin-top: 12px; font-family: ui-monospace, monospace; font-size: 14px; color: var(--dim); }
+  #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+  #badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); margin-left: 8px; }
+  #badge.on { color: var(--ok); border-color: #2f5a36; }
+  video { width: 100%; border-radius: 10px; background: #000; margin-top: 14px; display: none; }
+  ul { color: var(--dim); line-height: 1.6; padding-left: 20px; }
+  footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  a { color: var(--acc); }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal.hidden { display: none; }
+  .modal .card { max-width: 360px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Is3meo <span>// Stream Sender</span></h1>
+    <div class="ver" id="ver"></div>
+  </header>
+  <p>The PC waits here with a fixed code. The cinema on the Quest connects to it, then this page shares the screen back over WebRTC. Run it inside the <b>Is3meo Bridge</b> to start sharing automatically and to get remote mouse and keyboard from the Quest.</p>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="code">PC code (type it once on the Quest)</label>
+        <input id="code" maxlength="4" inputmode="numeric">
+      </div>
+      <div>
+        <label for="bitrate">Max bitrate</label>
+        <select id="bitrate">
+          <option value="8000000">8 Mbps</option>
+          <option value="15000000" selected>15 Mbps</option>
+          <option value="25000000">25 Mbps</option>
+        </select>
+      </div>
+      <div>
+        <label for="fpsSel">Frame rate</label>
+        <select id="fpsSel">
+          <option value="30">30 fps</option>
+          <option value="60" selected>60 fps</option>
+        </select>
+      </div>
+      <button id="btnShare">Share</button>
+      <button id="btnStop" class="ghost" disabled>Stop</button>
+    </div>
+    <div id="status">Starting...</div>
+    <div style="margin-top:8px;color:var(--dim);font-size:13px">Remote control <span id="badge">off (no Bridge)</span></div>
+    <video id="preview" muted playsinline></video>
+  </div>
+
+  <div class="card">
+    <b>How to</b>
+    <ul>
+      <li><b>With the Bridge (recommended):</b> run <code>run_bridge.bat</code> on the PC once. It opens this page, waits for the Quest, shares the screen and injects the Quest's mouse and keys.</li>
+      <li><b>Without the Bridge:</b> keep this page open. When the Quest connects, click <b>Share</b> and pick what to send. Video only.</li>
+      <li>On the Quest (Light Spill Lab v0.7.0+): type this code, press <b>Connect</b>, keep <b>Auto</b> on. Next time it connects by itself.</li>
+      <li>Audio: a <b>browser tab</b> share includes its audio. For the whole screen, tick <b>Share system audio</b>, or let the Bridge pick a recording device (<code>audio_device</code> in its config, e.g. VoiceMeeter).</li>
+    </ul>
+  </div>
+
+  <footer>
+    <div>Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
+    <div><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a> &nbsp; <button class="ghost" id="btnAbout" style="padding:6px 12px;font-size:14px">About</button></div>
+  </footer>
+</div>
+
+<div id="about" class="modal hidden">
+  <div class="card">
+    <h2 style="margin-top:0">Is3meo Stream Sender</h2>
+    <div class="ver" id="aboutVer"></div>
+    <p>Shares the PC screen with the Is3meoVR cinema over WebRTC (PeerJS signaling). Remote input goes through the Is3meo Bridge.</p>
+    <p style="color:var(--fg)">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</p>
+    <p><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a></p>
+    <button class="ghost" id="btnClose">Close</button>
+  </div>
+</div>
+
+<script>
+const APP_VERSION = '0.3.0';
+const audioDevice = new URLSearchParams(location.search).get('audioDevice') || '';
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'v' + APP_VERSION;
+$('aboutVer').textContent = 'v' + APP_VERSION;
+$('btnAbout').onclick = () => $('about').classList.remove('hidden');
+$('btnClose').onclick = () => $('about').classList.add('hidden');
+
+const qs = new URLSearchParams(location.search);
+const hasBridge = typeof window.is3meoInput === 'function';
+const log = (m) => { if (typeof window.is3meoLog === 'function') window.is3meoLog(String(m)); };
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function status(msg, cls = '') { const el = $('status'); el.textContent = msg; el.className = cls; log(msg); }
+
+if (qs.get('bitrate')) $('bitrate').value = qs.get('bitrate');
+$('badge').textContent = hasBridge ? 'on (Bridge)' : 'off (no Bridge)';
+$('badge').className = hasBridge ? 'on' : '';
+
+let code = qs.get('code') || lsGet('is3meo.pcCode', '') || String(Math.floor(1000 + Math.random() * 9000));
+$('code').value = code;
+let peer = null, questConn = null, call = null, stream = null;
+
+function startPeer() {
+  if (peer) peer.destroy();
+  code = $('code').value.trim();
+  if (!/^\d{4}$/.test(code)) { status('The code must be 4 digits', 'bad'); return; }
+  lsSet('is3meo.pcCode', code);
+  status('Registering PC ' + code + '...');
+  peer = new Peer('is3meo-pc-' + code);
+  peer.on('open', () => status('Waiting for the Quest - code ' + code, 'ok'));
+  peer.on('error', (e) => {
+    if (e.type === 'unavailable-id') status('Code ' + code + ' is already in use (another sender or Bridge open?)', 'bad');
+    else status('Error: ' + e.type, 'bad');
+  });
+  peer.on('disconnected', () => { status('Signaling lost, reconnecting...'); setTimeout(() => { if (peer && !peer.destroyed) peer.reconnect(); }, 2000); });
+  peer.on('connection', (c) => {
+    questConn = c;
+    c.on('open', () => {
+      c.send({ t: 'info', bridge: hasBridge, v: APP_VERSION });
+      status('Quest connected' + (hasBridge ? '' : ' - click Share'), 'ok');
+      ensureStream();
+    });
+    c.on('data', onData);
+    c.on('close', () => { if (questConn === c) { questConn = null; status('Quest left - waiting - code ' + code); } });
+  });
+}
+
+function onData(m) {
+  if (!m || typeof m !== 'object') return;
+  if (m.t === 'hello') { ensureStream(); return; }
+  if (hasBridge) window.is3meoInput(m);
+}
+
+function ensureStream() {
+  if (stream && stream.active) { callQuest(); return; }
+  if (typeof window.is3meoRequestShare === 'function') window.is3meoRequestShare(); // Bridge clicks Share for us
+  else $('btnShare').classList.add('pulse');
+}
+
+// Push bitrate / framerate limits into the video sender (WebRTC defaults are conservative)
+async function tuneSender(pc) {
+  const maxBitrate = +$('bitrate').value, maxFramerate = +$('fpsSel').value;
+  for (const s of pc.getSenders()) {
+    if (!s.track || s.track.kind !== 'video') continue;
+    const p = s.getParameters();
+    if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+    p.encodings[0].maxBitrate = maxBitrate;
+    p.encodings[0].maxFramerate = maxFramerate;
+    p.degradationPreference = 'maintain-resolution';
+    try { await s.setParameters(p); } catch (e) { /* not ready yet, retried on connect */ }
+  }
+}
+
+// Opus defaults to mono ~32 kbps; ask for stereo at a movie-friendly bitrate
+function stereoSdp(sdp) {
+  return sdp.replace(/a=fmtp:(\d+) (.*useinbandfec=1.*)/g, (m, pt, params) =>
+    params.includes('stereo=1') ? m : `a=fmtp:${pt} ${params};stereo=1;sprop-stereo=1;maxaveragebitrate=256000`);
+}
+
+// Audio from a recording device (e.g. "VoiceMeeter Aux Output") instead of the screen share audio
+async function getDeviceAudio(name) {
+  try {
+    const tmp = await navigator.mediaDevices.getUserMedia({ audio: true }); // labels need a permission first
+    tmp.getTracks().forEach((t) => t.stop());
+    const dev = (await navigator.mediaDevices.enumerateDevices())
+      .find((d) => d.kind === 'audioinput' && d.label.toLowerCase().includes(name.toLowerCase()));
+    if (!dev) { log('Audio device not found: ' + name); return null; }
+    const s = await navigator.mediaDevices.getUserMedia({ audio: {
+      deviceId: { exact: dev.deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+      channelCount: 2, sampleRate: 48000,
+    } });
+    log('Audio from: ' + dev.label);
+    return s.getAudioTracks()[0];
+  } catch (e) { log('Audio device error: ' + e.message); return null; }
+}
+
+function callQuest() {
+  if (!questConn || !stream) return;
+  if (call) call.close();
+  call = peer.call(questConn.peer, stream, { sdpTransform: stereoSdp });
+  const pc = call.peerConnection;
+  tuneSender(pc);
+  const vt = stream.getVideoTracks()[0];
+  const hasAudio = stream.getAudioTracks().length > 0;
+  pc.addEventListener('connectionstatechange', () => {
+    if (pc.connectionState === 'connected') {
+      tuneSender(pc);
+      const st = vt ? vt.getSettings() : {};
+      status('Live' + (hasAudio ? ' with audio' : ' (no audio track)') + ' - ' + (st.width || '?') + 'x' + (st.height || '?'), 'ok');
+    } else if (pc.connectionState === 'failed') status('Connection failed', 'bad');
+  });
+}
+
+async function share() {
+  $('btnShare').classList.remove('pulse');
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: +$('fpsSel').value }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: !audioDevice,
+      systemAudio: 'include',
+      selfBrowserSurface: 'exclude',
+    });
+  } catch (e) { status('Capture cancelled: ' + e.message, 'bad'); return; }
+  const vt = stream.getVideoTracks()[0];
+  if (vt) { vt.contentHint = 'motion'; vt.onended = stop; }
+  if (audioDevice) { const at = await getDeviceAudio(audioDevice); if (at) stream.addTrack(at); }
+  $('preview').srcObject = stream; $('preview').style.display = 'block'; $('preview').play();
+  $('btnShare').disabled = true; $('btnStop').disabled = false;
+  log('Capture started, audio tracks: ' + stream.getAudioTracks().length);
+  if (typeof window.is3meoShareStarted === 'function') window.is3meoShareStarted({ audio: stream.getAudioTracks().length });
+  callQuest();
+}
+
+function stop() {
+  if (call) call.close();
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  call = stream = null;
+  $('preview').style.display = 'none';
+  $('btnShare').disabled = false; $('btnStop').disabled = true;
+  status('Stopped sharing - waiting - code ' + code);
+}
+
+$('btnShare').onclick = share;
+$('btnStop').onclick = stop;
+$('code').addEventListener('change', startPeer);
+startPeer();
+</script>
+</body>
+</html>
