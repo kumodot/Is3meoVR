@@ -19,18 +19,18 @@ Run `add_to_startup.bat` once. From then on the Bridge starts with Windows and w
 1. Python 3.10+ and Microsoft Edge (or Chrome) installed.
 2. Run `install_bridge.bat` once (installs Playwright for Python).
 3. Run `run_bridge.bat`. The console shows the PC code.
-4. On the Quest, open Light Spill Lab **v0.10.0+**, type the code under **PC link**, press **Connect**, keep **Auto** on.
+4. On the Quest, open Light Spill Lab **v0.11.0+**, type the code under **PC link**, press **Connect**, keep **Auto** on.
 5. Optional: `add_to_startup.bat` starts the Bridge with Windows, so the Quest can always find it.
 
-## Quest controls (laser on the right hand)
+## Quest controls
 
-See the controller hints in VR (they change with the mode and with ALT). Short version:
+Every button has a label next to it in VR (mode color, white = same in every mode). **X** switches FLY / MEDIA / PC, hold the **left grip = ALT L** or the **right grip = ALT R** for more commands.
 
-| Mode (X switches) | What the right hand does |
+| Mode | Main layer (right hand) |
 |---|---|
-| FLY | Walk and look around. A = play/pause, B = back |
-| MEDIA | Player shortcuts from the profile: stick = seek / volume, A = play/pause, B = back, trigger = player UI, grip = fullscreen. ALT: next episode, mute, subtitle size / delay |
-| PC | Laser = mouse, trigger = click / drag, grip = right click, sticks = scroll, A = Enter, B = Esc. ALT: left stick = arrow keys, A = Space, B = Backspace |
+| FLY | Walk / turn, A = play/pause, B = back |
+| MEDIA | Stick = seek / volume (arrows: also navigates Stremio menus), trigger = select (Enter), A = play/pause, B = back, left trigger = open player. ALT L: next episode, mute, subtitles. ALT R: fullscreen, player UI |
+| PC | Laser = mouse, trigger = click / drag, sticks = scroll, A = Enter, B = Esc, left trigger = open player. ALT L: arrow keys, Space, Backspace, volume. ALT R: right click, F11, Tab |
 
 ## Config (`is3meo_bridge_config.json`)
 
