@@ -8,6 +8,9 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.7.0 | PC link with fixed code, laser pointer remote mouse, boost walk, new stick-click shortcuts |
+| Stream Sender | 0.2.0 | PC waits with a fixed code; works with the Is3meo Bridge |
+| Is3meo Bridge | 0.1.0 | Windows helper (Python + Playwright): auto share + remote mouse/keys, see `bridge/` |
 | Light Spill Lab | 0.6.0 | Stand-up fix, smooth turn, hand menu, controller models, 4x3 default, modular seat kit |
 | Light Spill Lab | 0.5.0 | PC stream receiver, screen size, auto aspect, custom seat GLB |
 | Stream Sender | 0.1.0 | PC page that streams a tab/window/screen to the cinema (WebRTC) |
