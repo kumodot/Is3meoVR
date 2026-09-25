@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.10.0 | Laser only when needed, gaze-lit controllers, fixed label lines + swap, open player from VR, sharper screen, VR resolution |
+| Is3meo Bridge | 0.4.0 | Opens the real stremio.exe (not the runtime), brings the player to front + fullscreen |
 | Light Spill Lab | 0.9.1 | Labels flat on the controller face, lit controllers |
 | Light Spill Lab | 0.9.0 | Per-button labels, FLY / MEDIA / PC colors, smaller EXIT, door with panic bar, stereo |
 | Stream Sender | 0.3.0 | Audio from a recording device, stereo Opus |
