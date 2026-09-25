@@ -32,6 +32,12 @@ Every button has a label next to it in VR (mode color, white = same in every mod
 | MEDIA | Stick = seek / volume (arrows: also navigates Stremio menus), trigger = select (Enter), A = play/pause, B = back, left trigger = open player. ALT L: next episode, mute, subtitles. ALT R: fullscreen, player UI |
 | PC | Laser = mouse, trigger = click / drag, sticks = scroll, A = Enter, B = Esc, left trigger = open player. ALT L: arrow keys, Space, Backspace, volume. ALT R: right click, F11, Tab |
 
+## Settings tab (v0.6.0)
+
+The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked from a list), captured screen, the app opened on connect, and the **apps the Quest can open**. For each app: name, exe (**Browse** opens a file picker, empty = auto detect), control profile and fullscreen key. **Test** opens it on the PC right away. **Save** writes `is3meo_bridge_config.json`.
+
+On the Quest (Light Spill Lab v0.12.0+) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
+
 ## Config (`is3meo_bridge_config.json`)
 
 | Key | Default | Meaning |
@@ -40,9 +46,8 @@ Every button has a label next to it in VR (mode color, white = same in every mod
 | `capture_source` | `Screen 1` | Title the browser auto-picks in the share dialog (Edge: `Screen 1`, `Screen 2`...) |
 | `audio_device` | `""` | Recording device that carries the PC sound (e.g. `VoiceMeeter Aux Output`). Empty = screen share audio, which Edge does not send when the screen is auto-selected |
 | `bitrate` | 15000000 | Video bitrate in bits per second |
-| `apps` | auto | Exe paths per player id (`stremio`, `potplayer`, `vlc`, ...) if auto-detect fails |
+| `apps` | Stremio, PotPlayer, VLC | List of `{id, name, path, profile, fullscreen_key}`. Edit it in the Settings tab |
 | `auto_open_app` | `stremio` | Player opened / brought to front when the Quest connects (`""` = off) |
-| `fullscreen_keys` | `F11` / `Enter` / `KeyF` | Key sent to each player to go fullscreen after it opens (skipped if it already is) |
 | `browser` | `msedge` | `msedge`, `chrome` or `chromium` |
 
 ## Notes

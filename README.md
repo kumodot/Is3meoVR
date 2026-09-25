@@ -8,6 +8,9 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.12.0 | PC app picker: asks the Bridge for its app list, profile follows the app |
+| Is3meo Bridge | 0.6.0 | Settings tab: any player exe + profile + fullscreen key, audio device list |
+| Stream Sender | 0.4.0 | Stream + Settings tabs, app list for the Quest |
 | Light Spill Lab | 0.11.0 | Labels on every button, ALT L + ALT R, MEDIA select, screen filter option |
 | Is3meo Bridge | 0.5.0 | Maximized is not fullscreen: sends F11 when needed |
 | Light Spill Lab | 0.10.0 | Laser only when needed, gaze-lit controllers, fixed label lines + swap, open player from VR, sharper screen, VR resolution |
