@@ -8,6 +8,9 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.13.0 | MEDIA buttons + labels from the Bridge Button Mapping |
+| Is3meo Bridge | 0.7.0 | Button Mapping tab: draw-and-map the Quest buttons per app (with Stream Sender 0.5.0) |
+| Stream Sender | 0.5.0 | Button Mapping tab |
 | Light Spill Lab | 0.12.0 | PC app picker: asks the Bridge for its app list, profile follows the app |
 | Is3meo Bridge | 0.6.0 | Settings tab: any player exe + profile + fullscreen key, audio device list |
 | Stream Sender | 0.4.0 | Stream + Settings tabs, app list for the Quest |

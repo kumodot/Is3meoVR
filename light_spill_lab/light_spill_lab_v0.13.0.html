@@ -1,0 +1,2452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Light Spill Lab v0.13.0</title>
+<style>
+  :root {
+    --bg: rgba(12, 14, 20, 0.84);
+    --fg: #dfe3ee;
+    --dim: #8a90a2;
+    --acc: #ffb347;
+    --line: rgba(255, 255, 255, 0.08);
+  }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: var(--fg); }
+  canvas { display: block; }
+  #panel {
+    position: fixed; top: 12px; left: 12px; width: 300px; max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 90px); overflow-y: auto;
+    background: var(--bg); backdrop-filter: blur(10px); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 14px 12px; font-size: 13px; box-sizing: border-box;
+  }
+  .hdr { display: flex; align-items: baseline; justify-content: space-between; }
+  .title { font-weight: 700; font-size: 16px; letter-spacing: 0.3px; }
+  .ver { color: var(--acc); font-family: ui-monospace, monospace; font-size: 12px; }
+  .sub { color: var(--dim); font-size: 12px; margin: 2px 0 8px; }
+  .sec { margin: 12px 0 6px; color: var(--acc); font-size: 11px; text-transform: uppercase; letter-spacing: 1.2px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  button {
+    background: #22262f; color: var(--fg); border: 1px solid #343a47; border-radius: 7px;
+    padding: 6px 10px; font-size: 12px; cursor: pointer;
+  }
+  button:hover { background: #2c313c; }
+  button.on { border-color: var(--acc); color: var(--acc); }
+  .small { color: var(--dim); font-size: 12px; margin-top: 6px; min-height: 16px; }
+  .slider { display: grid; grid-template-columns: 82px 1fr 44px; gap: 8px; align-items: center; margin: 5px 0; }
+  .slider span:last-child { text-align: right; font-family: ui-monospace, monospace; color: var(--dim); font-size: 12px; }
+  input[type=range] { width: 100%; accent-color: var(--acc); }
+  select { background: #22262f; color: var(--fg); border: 1px solid #343a47; border-radius: 6px; padding: 4px; }
+  .chk { display: flex; gap: 8px; align-items: center; margin: 5px 0; cursor: pointer; }
+  .key { margin-left: auto; font-family: ui-monospace, monospace; font-size: 11px; color: var(--dim); border: 1px solid #343a47; border-radius: 4px; padding: 0 5px; }
+  .hint { color: var(--dim); font-size: 11px; line-height: 1.5; margin-top: 10px; border-top: 1px solid var(--line); padding-top: 8px; }
+  #status { color: #9fd49f; }
+  #status.warn { color: #ffb347; }
+  #hudLabel {
+    position: fixed; right: 16px; bottom: 240px; font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--dim); pointer-events: none;
+  }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 10; }
+  .modal.hidden { display: none; }
+  .card { background: #12151c; border: 1px solid #2a2f3a; border-radius: 14px; padding: 22px 26px; width: 340px; max-width: calc(100vw - 32px); text-align: center; }
+  .card h2 { margin: 0 0 4px; font-size: 18px; }
+  .card p { color: var(--dim); font-size: 13px; line-height: 1.5; }
+  .card .credit { color: var(--fg); font-size: 13px; margin: 14px 0; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<div id="panel">
+  <div class="hdr"><div class="title">Light Spill Lab</div><div class="ver" id="ver"></div></div>
+  <div class="sub">VR Cinema prototype // screen light spill <span id="fps" style="float:right;font-family:ui-monospace,monospace"></span></div>
+
+  <div class="sec">Source</div>
+  <div class="row">
+    <button id="btnDemo" class="on">Demo reel</button>
+    <button id="btnVideo">Load video...</button>
+    <button id="btnPlay">Pause</button>
+  </div>
+  <div class="small" id="srcName">Demo reel</div>
+
+  <div class="sec">PC link (Is3meo Bridge)</div>
+  <div class="row">
+    <input id="pcCode" maxlength="16" placeholder="PC code" autocapitalize="off" style="width:110px;background:#0f1117;color:var(--fg);border:1px solid #343a47;border-radius:6px;padding:5px 8px;font-family:ui-monospace,monospace;letter-spacing:2px">
+    <button id="btnPc">Connect</button>
+    <label class="chk" style="margin:0"><input type="checkbox" id="pcAuto" checked> Auto</label>
+  </div>
+  <div class="small" id="streamInfo">Type the code shown by the Bridge (or the sender page) on the PC.</div>
+
+  <div class="sec">Room</div>
+  <div class="row">
+    <button id="btnGlb">Load GLB room...</button>
+    <button id="btnRoom">Default room</button>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button id="btnSeat">Load seat GLB...</button>
+    <button id="btnArm">Load armrest GLB...</button>
+  </div>
+  <div class="row" style="margin-top:6px">
+    <button id="btnKitReset">Reset seat kit</button>
+    <button id="btnKitDownload">Download seat kit</button>
+    <label class="chk" style="margin:0"><input type="checkbox" id="seatFlip"> Rotate 180</label>
+  </div>
+  <div class="small" id="status"></div>
+
+  <div class="sec">Screen</div>
+  <div class="slider"><span>Size</span><input type="range" id="sSize" min="0.6" max="1.3" step="0.05" value="1"><span id="vSize"></span></div>
+  <div class="slider"><span>Curvature</span><input type="range" id="sCurve" min="0" max="60" step="1" value="25"><span id="vCurve"></span></div>
+
+  <div class="sec">Light spill</div>
+  <label class="chk"><input type="checkbox" id="spillOn" checked> Spill enabled <span class="key">L</span></label>
+  <div class="slider"><span>Intensity</span><input type="range" id="sInt" min="0" max="40" step="0.5" value="12"><span id="vInt"></span></div>
+  <div class="slider"><span>Smoothing</span><input type="range" id="sSmooth" min="0" max="1000" step="10" value="180"><span id="vSmooth"></span></div>
+  <div class="slider"><span>Blur passes</span><input type="range" id="sBlur" min="0" max="8" step="1" value="3"><span id="vBlur"></span></div>
+  <div class="slider"><span>Ambient</span><input type="range" id="sAmb" min="0" max="1" step="0.01" value="0.18"><span id="vAmb"></span></div>
+  <div class="slider"><span>Specular</span><input type="range" id="sSpec" min="0" max="3" step="0.05" value="1"><span id="vSpec"></span></div>
+  <div class="slider"><span>Zones</span>
+    <select id="sZones">
+      <option value="4x3" selected>4 x 3 (12)</option>
+      <option value="6x4">6 x 4 (24)</option>
+      <option value="8x5">8 x 5 (40)</option>
+    </select><span></span>
+  </div>
+  <label class="chk"><input type="checkbox" id="dbg" checked> Show spill texture (debug)</label>
+
+  <div class="row" style="margin-top:8px"><button id="btnReset">Reset view (R)</button><button id="btnAbout">About</button></div>
+
+  <div class="hint">
+    <b>Desktop:</b> WASD / arrows move, Q/E down/up, Shift faster, drag to look, wheel = lens FOV, R reset view<br>
+    L toggle spill / N next demo scene / Space play-pause / H hide UI<br>
+    <b>VR modes (X to switch):</b> <span style="color:#ff6b5e">FLY</span> walk around, <span style="color:#5fdc7c">MEDIA</span> player shortcuts, <span style="color:#5aa9ff">PC</span> laser = mouse. Hold <b>left grip = ALT L</b> or <b>right grip = ALT R</b> for more commands. Labels next to each button show what it does, in the mode color.<br>
+    <b>Always:</b> Y menu, L3 next favorite seat, R3 light on/off, laser + trigger on the menu or the EXIT sign.<br>
+    Settings are saved on this headset. GLB tip: mesh <b>Screen</b>, empty <b>Viewpoint</b>, anything named <b>Exit</b> is clickable, meters.
+  </div>
+</div>
+
+<div id="hudLabel">spill texture (64x36, blurred + smoothed)</div>
+
+<div id="about" class="modal hidden">
+  <div class="card">
+    <h2>Light Spill Lab</h2>
+    <div class="ver" id="aboutVer"></div>
+    <p>Prototype of the screen light spill system for the Quest 3 VR Cinema project. The screen image is downsampled, blurred, smoothed over time and used as a set of area light zones that tint the room.</p>
+    <div class="credit">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
+    <button id="btnAboutClose">Close</button>
+  </div>
+</div>
+
+<input type="file" id="fileVideo" accept="video/*" hidden>
+<input type="file" id="fileGlb" accept=".glb" hidden>
+<input type="file" id="fileSeat" accept=".glb" hidden>
+<input type="file" id="fileArm" accept=".glb" hidden>
+
+<script type="module">
+import * as THREE from 'three';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+
+const APP_VERSION = '0.13.0';
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'v' + APP_VERSION;
+$('aboutVer').textContent = 'v' + APP_VERSION;
+
+// ---------------------------------------------------------------------------
+// Saved settings (localStorage on this headset / browser): tweaks come back next session
+// ---------------------------------------------------------------------------
+const SETTINGS_KEY = 'is3meo.settings.v1';
+let settings = {};
+try { settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}') || {}; } catch (e) { settings = {}; }
+function saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (e) { /* storage blocked */ } }
+for (const id of ['sInt', 'sSmooth', 'sBlur', 'sAmb', 'sSpec', 'sSize', 'sCurve']) {
+  if (settings[id] != null) $(id).value = settings[id];
+  $(id).addEventListener('input', () => { settings[id] = $(id).value; saveSettings(); });
+}
+
+
+// ---------------------------------------------------------------------------
+// Renderer / scene / camera rig
+// ---------------------------------------------------------------------------
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.xr.enabled = true;
+renderer.xr.setReferenceSpaceType('local-floor');
+// The screen is seen from far away and minified: mipmaps + anisotropy stop the shimmering on small text
+// Screen filter: sharp (no mipmaps), balanced (mipmaps biased toward detail), smooth (plain mipmaps)
+const SCREEN_FILTERS = ['sharp', 'balanced', 'smooth'];
+const screenBias = { value: 0 };
+const filteredTextures = [];
+function applyTexFilter(t) {
+  const f = (typeof settings !== 'undefined' && settings.screenFilter) || 'balanced';
+  t.generateMipmaps = f !== 'sharp';
+  t.minFilter = f === 'sharp' ? THREE.LinearFilter : THREE.LinearMipmapLinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  t.anisotropy = f === 'sharp' ? 1 : renderer.capabilities.getMaxAnisotropy();
+  t.needsUpdate = true;
+  screenBias.value = f === 'balanced' ? -0.9 : 0;
+}
+function sharpTex(t) {
+  t.colorSpace = THREE.SRGBColorSpace;
+  filteredTextures.push(t);
+  applyTexFilter(t);
+  return t;
+}
+document.body.appendChild(renderer.domElement);
+document.body.appendChild(VRButton.createButton(renderer));
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x000000);
+
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.05, 300);
+const dolly = new THREE.Group(); // VR rig: moved to the seat when a session starts
+dolly.add(camera);
+scene.add(dolly);
+
+
+const hemi = new THREE.HemisphereLight(0x8890a8, 0x201814, 0.18);
+scene.add(hemi);
+
+// Seat used for VR (floor position under the viewer + yaw facing the screen)
+const seat = { floor: new THREE.Vector3(), yaw: 0 };
+
+// ---------------------------------------------------------------------------
+// Shared spill uniforms (one object, referenced by every patched material)
+// ---------------------------------------------------------------------------
+const MAX_ZONES = 40;
+const spillU = {
+  uSpillTex: { value: null },
+  uSpillIntensity: { value: 12.0 },
+  uSpillOn: { value: 1.0 },
+  uZoneCount: { value: 24 },
+  uZonePos: { value: Array.from({ length: MAX_ZONES }, () => new THREE.Vector3()) },
+  uZoneUV: { value: Array.from({ length: MAX_ZONES }, () => new THREE.Vector2()) },
+  uZoneN: { value: Array.from({ length: MAX_ZONES }, () => new THREE.Vector3(0, 0, 1)) },
+  uZoneArea: { value: 1.0 },
+  uZoneSoft: { value: 0.5 },
+  uScreenN: { value: new THREE.Vector3(0, 0, 1) },
+  uSpillSpecMul: { value: 1.0 },
+};
+
+// Each zone of the screen acts as a small Lambertian area light.
+// Irradiance = sum(color * cos(receiver) * cos(emitter) * area / d^2)
+const SPILL_FRAG_HEAD = /* glsl */`
+#define SPILL_MAX_ZONES ${MAX_ZONES}
+uniform sampler2D uSpillTex;
+uniform float uSpillIntensity;
+uniform float uSpillOn;
+uniform int uZoneCount;
+uniform vec3 uZonePos[SPILL_MAX_ZONES];
+uniform vec2 uZoneUV[SPILL_MAX_ZONES];
+uniform vec3 uZoneN[SPILL_MAX_ZONES];
+uniform float uZoneArea;
+uniform float uZoneSoft;
+uniform vec3 uScreenN;
+varying vec3 vSpillWPos;
+varying vec3 vSpillWNrm;
+
+uniform float uSpillSpecMul;
+uniform float uSpillSpec;
+uniform float uSpillGloss;
+
+// Returns diffuse irradiance, writes a soft Blinn-Phong specular into spec
+vec3 spillLight(vec3 P, vec3 N, vec3 V, float gloss, bool doSpec, out vec3 spec) {
+  vec3 sum = vec3(0.0);
+  spec = vec3(0.0);
+  for (int i = 0; i < SPILL_MAX_ZONES; i++) {
+    if (i >= uZoneCount) break;
+    vec3 L = uZonePos[i] - P;
+    float d2 = dot(L, L);
+    vec3 l = L * inversesqrt(max(d2, 1e-6));
+    float cr = max(dot(N, l), 0.0);          // receiver facing the zone
+    float cs = max(dot(uZoneN[i], -l), 0.0); // zone facing the receiver (per zone, supports curved screens)
+    vec3 c = texture2D(uSpillTex, uZoneUV[i]).rgb;
+    float g = cs / (d2 + uZoneSoft);         // soft term avoids hotspots near the screen
+    sum += c * (cr * g);
+    if (doSpec && cr > 0.0) {
+      vec3 h = normalize(l + V);
+      spec += c * (pow(max(dot(N, h), 0.0), gloss) * cr * g);
+    }
+  }
+  spec *= uZoneArea * (gloss + 8.0) / 25.1327; // normalized Blinn-Phong
+  return sum * uZoneArea;
+}
+`;
+
+function patchMaterial(mat, spec = 0, gloss = 16) {
+  if (mat.userData.spillPatched) return mat;
+  mat.userData.spillPatched = true;
+  const own = { uSpillSpec: { value: spec }, uSpillGloss: { value: gloss } }; // per material
+  mat.userData.spillOwn = own;
+  mat.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, spillU, own);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vSpillWPos;\nvarying vec3 vSpillWNrm;')
+      .replace('#include <project_vertex>', /* glsl */`#include <project_vertex>
+        vec4 spillWP = vec4(transformed, 1.0);
+        vec3 spillN = objectNormal;
+        #ifdef USE_INSTANCING
+          spillWP = instanceMatrix * spillWP;
+          spillN = mat3(instanceMatrix) * spillN;
+        #endif
+        spillWP = modelMatrix * spillWP;
+        vSpillWPos = spillWP.xyz;
+        vSpillWNrm = normalize(mat3(modelMatrix) * spillN);`);
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\n' + SPILL_FRAG_HEAD)
+      .replace('#include <aomap_fragment>', /* glsl */`
+        if (uSpillOn > 0.5) {
+          vec3 spN = normalize(vSpillWNrm) * (gl_FrontFacing ? 1.0 : -1.0);
+          vec3 spV = normalize(cameraPosition - vSpillWPos);
+          vec3 spSpec;
+          vec3 spIrr = spillLight(vSpillWPos, spN, spV, uSpillGloss, uSpillSpec > 0.0, spSpec);
+          reflectedLight.indirectDiffuse += spIrr * material.diffuseColor * RECIPROCAL_PI * uSpillIntensity;
+          reflectedLight.indirectSpecular += spSpec * uSpillSpec * uSpillSpecMul * uSpillIntensity;
+        }
+        #include <aomap_fragment>`);
+  };
+  mat.customProgramCacheKey = () => 'spill_v2';
+  mat.needsUpdate = true;
+  return mat;
+}
+
+// ---------------------------------------------------------------------------
+// Screen sources: procedural demo reel + local video file
+// ---------------------------------------------------------------------------
+const demoCanvas = document.createElement('canvas');
+demoCanvas.width = 640; demoCanvas.height = 360;
+const demoCtx = demoCanvas.getContext('2d');
+const demoTex = new THREE.CanvasTexture(demoCanvas);
+demoTex.colorSpace = THREE.SRGBColorSpace;
+
+const video = document.createElement('video');
+video.loop = true; video.playsInline = true;
+let videoTex = null;
+
+let source = 'demo';
+let demoPaused = false;
+let demoTime = 0;
+let lastSceneIdx = -1;
+
+const SCENES = ['Sunset', 'Ocean Night', 'Explosion', 'Forest', 'Police Lights', 'Split Neon', 'End Credits'];
+const SCENE_LEN = 5;
+
+function drawDemo(t) {
+  const W = 640, H = 360, ctx = demoCtx;
+  const si = Math.floor(t / SCENE_LEN) % SCENES.length;
+  const lt = t % SCENE_LEN;
+  ctx.save();
+  switch (si) {
+    case 0: { // Sunset
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#1a0b3a'); g.addColorStop(0.55, '#ff5e3a'); g.addColorStop(1, '#ffb347');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      const sx = W * 0.25 + lt * 18, sy = H * 0.62 - lt * 5;
+      const rg = ctx.createRadialGradient(sx, sy, 10, sx, sy, 160);
+      rg.addColorStop(0, 'rgba(255,245,200,1)'); rg.addColorStop(0.25, 'rgba(255,200,120,0.6)'); rg.addColorStop(1, 'rgba(255,120,60,0)');
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#0a0508'; ctx.fillRect(0, H * 0.8, W, H * 0.2);
+      break;
+    }
+    case 1: { // Ocean night
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#020a1f'); g.addColorStop(1, '#0a3a6b');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e8f0ff'; ctx.beginPath(); ctx.arc(W * 0.8, H * 0.2, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 3;
+      for (let k = 0; k < 7; k++) {
+        ctx.strokeStyle = `rgba(90,200,255,${0.15 + k * 0.06})`;
+        ctx.beginPath();
+        const y0 = H * 0.5 + k * 24;
+        for (let x = 0; x <= W; x += 10) ctx.lineTo(x, y0 + Math.sin(x * 0.03 + lt * 2 + k) * 6);
+        ctx.stroke();
+      }
+      break;
+    }
+    case 2: { // Explosion
+      ctx.fillStyle = '#060505'; ctx.fillRect(0, 0, W, H);
+      if (lt > 0.8) {
+        const e = lt - 0.8, r = 30 + e * 260, a = Math.max(0, 1 - e / 3.6);
+        const cx = W * 0.7, cy = H * 0.55;
+        const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        rg.addColorStop(0, `rgba(255,255,240,${a})`); rg.addColorStop(0.3, `rgba(255,200,60,${a})`);
+        rg.addColorStop(0.7, `rgba(255,70,0,${a * 0.8})`); rg.addColorStop(1, 'rgba(80,10,0,0)');
+        ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      }
+      break;
+    }
+    case 3: { // Forest
+      const g = ctx.createLinearGradient(0, 0, 0, H);
+      g.addColorStop(0, '#12361a'); g.addColorStop(1, '#0a1f0c');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+      for (let k = 0; k < 5; k++) {
+        const fl = 0.12 + 0.08 * Math.sin(lt * 3 + k * 1.7);
+        ctx.fillStyle = `rgba(190,255,150,${fl})`;
+        ctx.beginPath(); ctx.moveTo(60 + k * 70, 0); ctx.lineTo(110 + k * 70, 0);
+        ctx.lineTo(260 + k * 110, H); ctx.lineTo(180 + k * 110, H); ctx.fill();
+      }
+      break;
+    }
+    case 4: { // Police lights
+      ctx.fillStyle = '#020204'; ctx.fillRect(0, 0, W, H);
+      const phase = Math.floor(lt * 6) % 2;
+      const cx = phase === 0 ? W * 0.2 : W * 0.8;
+      const col = phase === 0 ? '255,30,30' : '40,80,255';
+      const rg = ctx.createRadialGradient(cx, H * 0.5, 0, cx, H * 0.5, 260);
+      rg.addColorStop(0, `rgba(${col},1)`); rg.addColorStop(1, `rgba(${col},0)`);
+      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
+      break;
+    }
+    case 5: { // Split neon
+      const split = W * (0.5 + 0.3 * Math.sin(lt * 1.2));
+      ctx.fillStyle = '#00e5ff'; ctx.fillRect(0, 0, split, H);
+      ctx.fillStyle = '#ff00aa'; ctx.fillRect(split, 0, W - split, H);
+      break;
+    }
+    case 6: { // End credits
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#e8e8e8'; ctx.font = '20px Georgia, serif'; ctx.textAlign = 'center';
+      const lines = ['LIGHT SPILL LAB', '', 'Directed by', 'Marcelo Souza', '', 'Screen Light', 'Area Zones', '', 'Kumodot.art', '2026'];
+      lines.forEach((s, k) => ctx.fillText(s, W / 2, H + 20 + k * 34 - lt * 90));
+      break;
+    }
+  }
+  ctx.restore();
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.font = '13px monospace'; ctx.textAlign = 'left';
+  ctx.fillText('DEMO REEL // ' + SCENES[si].toUpperCase(), 14, H - 14);
+  return si;
+}
+
+// PC stream (WebRTC) video element
+const streamVideo = document.createElement('video');
+streamVideo.playsInline = true;
+let streamTex = null;
+
+function currentScreenTex() {
+  if (source === 'video' && videoTex) return videoTex;
+  if (source === 'stream' && streamTex) return streamTex;
+  return demoTex;
+}
+function activeVideo() {
+  return source === 'video' ? video : source === 'stream' ? streamVideo : null;
+}
+
+// ---------------------------------------------------------------------------
+// Screen mesh + frame (position / axes / size) + zone layout
+// ---------------------------------------------------------------------------
+const screenMat = new THREE.MeshBasicMaterial({ map: demoTex, toneMapped: false });
+// Mip LOD bias on the screen (keeps small text crisp with mipmaps on)
+screenMat.onBeforeCompile = (sh) => {
+  sh.uniforms.uMapBias = screenBias;
+  sh.fragmentShader = 'uniform float uMapBias;\n' + sh.fragmentShader.replace('#include <map_fragment>',
+    THREE.ShaderChunk.map_fragment.replace('texture2D( map, vMapUv )', 'texture2D( map, vMapUv, uMapBias )'));
+};
+const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), screenMat);
+scene.add(screenMesh);
+let maskMesh = null; // curved black masking behind the screen (default room only)
+
+const screenFrame = {
+  center: new THREE.Vector3(), right: new THREE.Vector3(1, 0, 0),
+  up: new THREE.Vector3(0, 1, 0), normal: new THREE.Vector3(0, 0, 1), w: 12, h: 6.75,
+};
+let zonesX = 4, zonesY = 3; // light default for Quest
+let curveDeg = 25; // total arc angle of the screen, 0 = flat
+
+// Curved panel that keeps its arc length = w. Local +Z faces the viewer, edges bend toward +Z.
+function curvedPanelGeometry(w, h, arc, segX = 64) {
+  const curved = arc > 1e-3;
+  const g = new THREE.PlaneGeometry(w, h, curved ? segX : 1, 1);
+  if (curved) {
+    const R = w / arc, pos = g.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const a = (pos.getX(i) / w) * arc;
+      pos.setX(i, R * Math.sin(a));
+      pos.setZ(i, R * (1 - Math.cos(a)));
+    }
+    g.computeVertexNormals();
+  }
+  return g;
+}
+
+// Point + normal on the screen for (u, v), in screen-local coordinates
+function screenLocal(u, v, outP, outN) {
+  const f = screenFrame, arc = THREE.MathUtils.degToRad(curveDeg);
+  const y = (v - 0.5) * f.h;
+  if (arc < 1e-3) { outP.set((u - 0.5) * f.w, y, 0); outN.set(0, 0, 1); return; }
+  const R = f.w / arc, a = (u - 0.5) * arc;
+  outP.set(R * Math.sin(a), y, R * (1 - Math.cos(a)));
+  outN.set(-Math.sin(a), 0, Math.cos(a));
+}
+
+// Screen as authored by the room; size and content aspect are applied on top (bottom edge anchored)
+const screenBase = {
+  center: new THREE.Vector3(), right: new THREE.Vector3(1, 0, 0),
+  up: new THREE.Vector3(0, 1, 0), normal: new THREE.Vector3(0, 0, 1), w: 12, h: 6.75,
+};
+let screenSize = 1.0, contentAspect = 16 / 9;
+
+function setScreenBase(center, right, up, normal, w, h) {
+  screenBase.center.copy(center); screenBase.right.copy(right);
+  screenBase.up.copy(up); screenBase.normal.copy(normal);
+  screenBase.w = w; screenBase.h = h;
+  applyScreenLayout();
+}
+function applyScreenLayout() {
+  const b = screenBase;
+  const w = b.w * screenSize, h = w / contentAspect;
+  const c = b.center.clone().addScaledVector(b.up, (h - b.h) / 2);
+  setScreenFrame(c, b.right, b.up, b.normal, w, h);
+}
+function setContentAspect(a) {
+  if (!isFinite(a) || a <= 0) return;
+  a = THREE.MathUtils.clamp(a, 1.2, 2.8);
+  if (Math.abs(a - contentAspect) < 0.005) return;
+  contentAspect = a;
+  applyScreenLayout();
+}
+
+function setScreenFrame(center, right, up, normal, w, h) {
+  screenFrame.center.copy(center); screenFrame.right.copy(right);
+  screenFrame.up.copy(up); screenFrame.normal.copy(normal);
+  screenFrame.w = w; screenFrame.h = h;
+  rebuildScreen();
+}
+
+function rebuildScreen() {
+  const f = screenFrame, arc = THREE.MathUtils.degToRad(curveDeg);
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(f.right, f.up, f.normal));
+  screenMesh.geometry.dispose();
+  screenMesh.geometry = curvedPanelGeometry(f.w, f.h, arc);
+  screenMesh.quaternion.copy(q);
+  screenMesh.position.copy(f.center).addScaledVector(f.normal, 0.005);
+  screenMesh.scale.set(1, 1, 1);
+  if (maskMesh) {
+    const mw = f.w + 0.8;
+    maskMesh.geometry.dispose();
+    maskMesh.geometry = curvedPanelGeometry(mw, f.h + 0.65, arc * (mw / f.w)); // same radius
+    maskMesh.quaternion.copy(q);
+    maskMesh.position.copy(f.center).addScaledVector(f.normal, -0.03);
+  }
+  rebuildZones();
+}
+
+function rebuildZones() {
+  const f = screenFrame;
+  const p = new THREE.Vector3(), n = new THREE.Vector3();
+  let i = 0;
+  for (let y = 0; y < zonesY; y++) {
+    for (let x = 0; x < zonesX; x++) {
+      const u = (x + 0.5) / zonesX, v = (y + 0.5) / zonesY;
+      screenLocal(u, v, p, n);
+      spillU.uZonePos.value[i].copy(f.center)
+        .addScaledVector(f.right, p.x).addScaledVector(f.up, p.y).addScaledVector(f.normal, p.z);
+      spillU.uZoneN.value[i].set(0, 0, 0).addScaledVector(f.right, n.x).addScaledVector(f.normal, n.z).normalize();
+      spillU.uZoneUV.value[i].set(u, v);
+      i++;
+    }
+  }
+  spillU.uZoneCount.value = i;
+  spillU.uZoneArea.value = (f.w * f.h) / i; // arc length is preserved, so area stays w * h
+  spillU.uZoneSoft.value = spillU.uZoneArea.value * 0.35;
+  spillU.uScreenN.value.copy(f.normal);
+}
+
+function setCurve(deg) {
+  curveDeg = deg;
+  const el = $('sCurve');
+  if (el && +el.value !== deg) { el.value = deg; $('vCurve').textContent = deg + '\u00b0'; }
+  rebuildScreen();
+}
+
+// Desktop first-person camera state
+const view = { eye: new THREE.Vector3(), yaw: 0, pitch: 0 };
+let camYaw = 0, camPitch = 0;
+function applyCamRot() { camera.rotation.set(camPitch, camYaw, 0, 'YXZ'); }
+
+function setViewpoint(eye, target) {
+  const d = new THREE.Vector3().subVectors(target, eye);
+  view.eye.copy(eye);
+  view.yaw = Math.atan2(-d.x, -d.z);
+  view.pitch = Math.atan2(d.y, Math.hypot(d.x, d.z));
+  seat.floor.set(eye.x, eye.y - 1.2, eye.z); // seated eye height ~1.2 m
+  seat.yaw = view.yaw;
+  resetView();
+}
+
+function resetView() {
+  if (renderer.xr.isPresenting) {
+    // Put the head (not the rig origin) over the seat and turn the rig so the way you are
+    // looking right now faces the screen, whatever direction your body faces in the room.
+    const headYaw = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').y;
+    const yaw = seat.yaw - headYaw;
+    dolly.rotation.set(0, yaw, 0);
+    const off = new THREE.Vector3(camera.position.x, 0, camera.position.z).applyAxisAngle(Y_AXIS, yaw);
+    dolly.position.copy(seat.floor).sub(off);
+    return;
+  }
+  camera.position.copy(view.eye);
+  camYaw = view.yaw; camPitch = view.pitch;
+  applyCamRot();
+  camera.fov = 60;
+  camera.updateProjectionMatrix();
+}
+
+// Room limits so the camera can't fly out of the theater
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const bounds = new THREE.Box3(new THREE.Vector3(-8.6, 0.3, -10.4), new THREE.Vector3(8.6, 9.6, 10.8));
+let floorAt = () => bounds.min.y;
+function clampToRoom(p, minAbove = 0.5) {
+  p.x = THREE.MathUtils.clamp(p.x, bounds.min.x, bounds.max.x);
+  p.z = THREE.MathUtils.clamp(p.z, bounds.min.z, bounds.max.z);
+  p.y = Math.min(p.y, bounds.max.y);
+  p.y = Math.max(p.y, floorAt(p.x, p.z) + minAbove);
+}
+
+// ---------------------------------------------------------------------------
+// Default procedural room
+// ---------------------------------------------------------------------------
+let roomGroup = new THREE.Group();
+let exitTargets = []; // things the laser can click to leave VR (the EXIT sign)
+scene.add(roomGroup);
+
+function stdMat(color, rough = 0.9, spec = 0, gloss = 16) {
+  return patchMaterial(new THREE.MeshStandardMaterial({ color, roughness: rough }), spec, gloss);
+}
+function box(w, h, d, mat, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  roomGroup.add(m);
+  return m;
+}
+const zRow = (i) => -3 + i * 1.1;
+const ROWS = 12, RISE = 0.3;
+
+function buildDefaultRoom() {
+  const carpet = stdMat(0x2a2628, 0.95);
+  const wall = stdMat(0x2b2d36, 0.9, 0.03, 8);
+  const panel = stdMat(0x4a4e5c, 0.8, 0.08, 10);
+  const ceil = stdMat(0x34363f, 0.9);
+  const cloud = stdMat(0x5a5e6c, 0.75, 0.05, 8);
+  const black = stdMat(0x060606, 1.0);
+  const stage = stdMat(0x1c1c20, 0.7, 0.3, 30);
+
+  box(18, 0.2, 22.4, carpet, 0, -0.1, 0);        // floor
+  box(18, 0.2, 22.4, ceil, 0, 10.1, 0);          // ceiling
+  box(0.2, 10, 22.4, wall, -9.1, 5, 0);          // left wall
+  box(0.2, 10, 22.4, wall, 9.1, 5, 0);           // right wall
+  box(18, 10, 0.2, wall, 0, 5, -11.15);          // front wall
+  box(18, 10, 0.2, wall, 0, 5, 11.1);            // back wall
+
+  for (let z = -8; z <= 9; z += 3) {             // acoustic panels
+    if (z !== -8) box(0.15, 5.5, 2.4, panel, -8.925, 4.6, z); // left front slot is the exit door
+    box(0.15, 5.5, 2.4, panel, 8.925, 4.6, z);
+  }
+  // Acoustic ceiling clouds, tilted toward the screen so they catch its light
+  for (let z = -6; z <= 9; z += 3.5) {
+    const c = box(14, 0.12, 2.6, cloud, 0, 8.6, z);
+    c.rotation.x = 0.15;
+  }
+  box(16, 0.9, 1.6, stage, 0, 0.45, -10.2);      // stage
+  maskMesh = new THREE.Mesh(new THREE.BufferGeometry(), black); // curved screen masking
+  roomGroup.add(maskMesh);
+  // Classic exit door with a glowing EXIT sign: point the laser + trigger to leave VR
+  const door = box(0.08, 2.2, 1.1, stdMat(0x25262c, 0.75, 0.05, 12), -8.96, 1.1, -8); // dark grey, just a touch lighter than the wall
+  const frameMat = stdMat(0x0b0b0d, 0.8, 0.03, 8);
+  box(0.1, 0.07, 1.24, frameMat, -8.95, 2.235, -8);                // frame top
+  box(0.1, 2.27, 0.07, frameMat, -8.95, 1.135, -8.585);            // frame sides
+  box(0.1, 2.27, 0.07, frameMat, -8.95, 1.135, -7.415);
+  // Panic bar: black horizontal push bar across the door
+  const barMat = stdMat(0x0a0a0a, 0.35, 0.8, 60);
+  box(0.035, 0.05, 0.86, barMat, -8.87, 1.0, -8);
+  box(0.07, 0.07, 0.05, barMat, -8.9, 1.0, -8.44);
+  box(0.07, 0.07, 0.05, barMat, -8.9, 1.0, -7.56);
+  const exitSign = makeExitSign();
+  exitSign.position.set(-8.9, 2.5, -8);
+  exitSign.rotation.y = Math.PI / 2;
+  roomGroup.add(exitSign);
+  exitTargets = [exitSign, door];
+
+  for (let i = 1; i < ROWS; i++) {               // stepped platforms
+    const h = i * RISE;
+    box(18, h, 1.1, carpet, 0, h / 2, zRow(i));
+  }
+  box(18, ROWS * RISE, 1.35, carpet, 0, (ROWS * RISE) / 2, 10.325);
+
+  // Seat and armrest spots (floor positions), filled by the seat kit
+  seatSpots = [];
+  const arms = new Map();
+  for (let i = 0; i < ROWS; i++) {
+    for (let k = 0; k <= 22; k++) {
+      const x = -6.6 + k * 0.6;
+      if (Math.abs(Math.abs(x) - 4.2) < 0.05) continue; // aisles
+      seatSpots.push(new THREE.Vector3(x, i * RISE, zRow(i)));
+      for (const ax of [x - 0.3, x + 0.3]) arms.set(i + '_' + ax.toFixed(2), new THREE.Vector3(ax, i * RISE, zRow(i)));
+    }
+  }
+  armSpots = Array.from(arms.values());
+  seatGroup = new THREE.Group();
+  roomGroup.add(seatGroup);
+  buildSeatMeshes();
+
+  // Aisle step lights (unlit, not affected by spill)
+  const stepMat = new THREE.MeshBasicMaterial({ color: 0xffa040 });
+  for (let i = 0; i < ROWS; i++) {
+    for (const x of [-4.2, 4.2]) {
+      const s = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.03), stepMat);
+      s.position.set(x, i * RISE + 0.02, zRow(i) - 0.55);
+      roomGroup.add(s);
+    }
+  }
+
+  bounds.min.set(-8.6, 0.3, -10.4);
+  bounds.max.set(8.6, 9.6, 10.8);
+  floorAt = (x, z) => {
+    if (z < -9.4 && Math.abs(x) < 8) return 0.9;                 // stage
+    if (z >= zRow(ROWS - 1) + 0.55) return ROWS * RISE;          // rear platform
+    for (let i = ROWS - 1; i >= 1; i--) if (z >= zRow(i) - 0.55) return i * RISE;
+    return 0;
+  };
+  setScreenBase(
+    new THREE.Vector3(0, 4.6, -10.89), new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1), 12, 6.75
+  );
+  goToSeat(seatRows[0] || 5, true);
+}
+
+// ---------------------------------------------------------------------------
+// Seat kit: seat + armrest as separate modular parts, instanced on every spot.
+// Origin on the floor, front facing -Z, meters. Repo kit: assets/seat_kit/seat.glb + armrest.glb
+// ---------------------------------------------------------------------------
+let seatSpots = [], armSpots = [];
+let seatGroup = null;
+const kit = { seat: null, arm: null }; // custom parts, null = built-in
+let builtinKit = null;
+
+// Built-in kit geometry (also what "Download seat kit" exports)
+function makeSeatKit() {
+  const fabric = new THREE.MeshStandardMaterial({ name: 'SeatFabric', color: 0x6a121c, roughness: 0.8 });
+  const plastic = new THREE.MeshStandardMaterial({ name: 'ArmPlastic', color: 0x1e1e22, roughness: 0.6 });
+  const seat = new THREE.Group(); seat.name = 'Seat';
+  const cushion = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.16, 0.5, 3, 0.06), fabric);
+  cushion.name = 'Seat_Cushion'; cushion.position.set(0, 0.44, 0.02);
+  const back = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.7, 0.12, 3, 0.05), fabric);
+  back.name = 'Seat_Back'; back.position.set(0, 0.82, 0.34); back.rotation.x = 0.17;
+  seat.add(cushion, back);
+  const arm = new THREE.Group(); arm.name = 'Armrest';
+  const top = new THREE.Mesh(new RoundedBoxGeometry(0.08, 0.1, 0.55, 2, 0.035), plastic);
+  top.name = 'Arm_Top'; top.position.set(0, 0.64, 0.05);
+  const leg = new THREE.Mesh(new RoundedBoxGeometry(0.06, 0.6, 0.36, 2, 0.02), plastic);
+  leg.name = 'Arm_Leg'; leg.position.set(0, 0.3, 0.12);
+  arm.add(top, leg);
+  return { seat, arm };
+}
+
+// Material by name: fabric gets a soft sheen, hard parts a tighter highlight
+function kitMat(m) {
+  const n = ((m && m.name) || '').toLowerCase();
+  let spec = 0.15, gloss = 20;
+  if (/fabric|cloth|velvet|cushion|seat/.test(n)) { spec = 0.35; gloss = 10; }
+  else if (/plastic|arm|metal|wood|leg/.test(n)) { spec = 0.6; gloss = 40; }
+  if (m && m.isMeshStandardMaterial) return patchMaterial(m, spec, gloss);
+  return patchMaterial(new THREE.MeshStandardMaterial({
+    name: m && m.name, color: m && m.color ? m.color.clone() : 0xffffff, map: (m && m.map) || null, roughness: 0.85,
+  }), spec, gloss);
+}
+
+// Flatten a model into instancing parts (geometry baked to the model origin)
+function partsFrom(root, allowFix) {
+  root.updateMatrixWorld(true);
+  const size = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3());
+  const unit = allowFix && size.y > 3 ? 0.01 : 1; // taller than 3 units = probably centimeters
+  const fix = new THREE.Matrix4().makeScale(unit, unit, unit);
+  if (allowFix && $('seatFlip').checked) fix.premultiply(new THREE.Matrix4().makeRotationY(Math.PI));
+  const parts = [];
+  let tris = 0;
+  root.traverse((o) => {
+    if (!o.isMesh) return;
+    const g = o.geometry.clone();
+    g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(fix, o.matrixWorld));
+    g.userData.keep = true; // shared by rebuilds, never disposed with the room
+    const mat = Array.isArray(o.material) ? o.material.map(kitMat) : kitMat(o.material);
+    parts.push({ geometry: g, material: mat });
+    tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
+  });
+  parts.tris = Math.round(tris);
+  parts.unitFixed = unit !== 1;
+  return parts;
+}
+
+function getBuiltinKit() {
+  if (!builtinKit) { const k = makeSeatKit(); builtinKit = { seat: partsFrom(k.seat, false), arm: partsFrom(k.arm, false) }; }
+  return builtinKit;
+}
+
+function addInstances(parts, spots) {
+  const m4 = new THREE.Matrix4();
+  for (const part of parts) {
+    const im = new THREE.InstancedMesh(part.geometry, part.material, spots.length);
+    spots.forEach((p, k) => { m4.makeTranslation(p.x, p.y, p.z); im.setMatrixAt(k, m4); });
+    seatGroup.add(im);
+  }
+}
+
+function buildSeatMeshes() {
+  if (!seatGroup) return;
+  seatGroup.children.slice().forEach((m) => { seatGroup.remove(m); if (m.dispose) m.dispose(); });
+  const bi = getBuiltinKit();
+  addInstances(kit.seat || bi.seat, seatSpots);
+  addInstances(kit.arm || bi.arm, armSpots);
+}
+
+function kitSummary() {
+  const bi = getBuiltinKit();
+  const st = (kit.seat || bi.seat).tris, at = (kit.arm || bi.arm).tris;
+  const total = st * seatSpots.length + at * armSpots.length;
+  return `Seat ${st} tris x ${seatSpots.length}, armrest ${at} tris x ${armSpots.length} = ${Math.round(total / 1000)}k tris`;
+}
+
+function loadKitPart(which, gltf, name) {
+  const parts = partsFrom(gltf.scene, true);
+  if (!parts.length) { setStatus('No meshes found in ' + name, true); return; }
+  kit[which] = parts;
+  buildSeatMeshes();
+  setStatus(`${which === 'seat' ? 'Seat' : 'Armrest'}: ${name}` + (parts.unitFixed ? ' (scaled from cm)' : '') + ' - ' + kitSummary());
+}
+
+// Repo kit: the improved models live in the repo and load by default
+const KIT_URL = '../assets/seat_kit/';
+function loadRepoKit() {
+  let pending = 2;
+  const done = () => {
+    if (--pending > 0) return;
+    buildSeatMeshes();
+    setStatus((kit.seat || kit.arm ? 'Repo seat kit - ' : 'Built-in seat kit - ') + kitSummary());
+  };
+  for (const [which, file] of [['seat', 'seat.glb'], ['arm', 'armrest.glb']]) {
+    loader.load(KIT_URL + file + '?t=' + Date.now(),
+      (gltf) => { const pr = partsFrom(gltf.scene, false); if (pr.length) kit[which] = pr; done(); },
+      undefined,
+      () => done()); // missing file: keep the built-in part
+  }
+}
+
+async function exportSeatKit() {
+  const k = makeSeatKit();
+  const ex = new GLTFExporter();
+  return {
+    seat: await ex.parseAsync(k.seat, { binary: true }),
+    arm: await ex.parseAsync(k.arm, { binary: true }),
+  };
+}
+async function downloadSeatKit() {
+  const out = await exportSeatKit();
+  for (const [ab, file] of [[out.seat, 'seat.glb'], [out.arm, 'armrest.glb']]) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([ab], { type: 'model/gltf-binary' }));
+    a.download = file; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+}
+window.lslKit = { exportSeatKit }; // used by the kit export script
+
+// Favorite seats (default room): L3 cycles through them. Rows are 1-based, center seat.
+let seatRows = Array.isArray(settings.seatRows) && settings.seatRows.length ? settings.seatRows : [5, 7];
+let seatIdx = 0, currentRow = seatRows[0];
+function seatEye(row) { const i = THREE.MathUtils.clamp(row, 1, ROWS) - 1; return new THREE.Vector3(0, i * RISE + 1.15, zRow(i) + 0.08); }
+function goToSeat(row, silent) {
+  currentRow = THREE.MathUtils.clamp(row, 1, ROWS);
+  setViewpoint(seatEye(currentRow), new THREE.Vector3(0, 4.3, -10.89));
+  if (!silent && typeof toast === 'function') toast('Seat: row ' + currentRow);
+  if (typeof menuDirty !== 'undefined') menuDirty = true;
+}
+function nextSeat() {
+  if (!seatGroup) { resetView(); return; } // custom GLB room: its Viewpoint
+  seatIdx = (seatIdx + 1) % seatRows.length;
+  goToSeat(seatRows[seatIdx]);
+}
+function toggleFavoriteSeat() {
+  const i = seatRows.indexOf(currentRow);
+  if (i >= 0 && seatRows.length > 1) seatRows.splice(i, 1); else if (i < 0) seatRows.push(currentRow);
+  seatRows.sort((a, b) => a - b);
+  settings.seatRows = seatRows; saveSettings();
+  toast('Favorite seats: ' + seatRows.join(', '));
+}
+
+function makeExitSign() {
+  const cv = document.createElement('canvas');
+  cv.width = 256; cv.height = 96;
+  const c = cv.getContext('2d');
+  c.fillStyle = '#062b12'; c.fillRect(0, 0, 256, 96);
+  c.strokeStyle = '#2bd95a'; c.lineWidth = 2.5; c.strokeRect(5, 5, 246, 86);
+  c.fillStyle = '#6dff8a'; c.font = 'bold 44px Arial, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText('EXIT', 128, 52);
+  const tex = new THREE.CanvasTexture(cv);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+  mat.color.setScalar(0.8);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(0.46, 0.17), mat);
+  m.name = 'EXIT_sign';
+  m.userData.setHover = (h) => mat.color.setScalar(h ? 1.3 : 0.8);
+  return m;
+}
+
+function clearRoom() {
+  scene.remove(roomGroup);
+  roomGroup.traverse((o) => { if (o.geometry && !o.geometry.userData.keep) o.geometry.dispose(); });
+  roomGroup = new THREE.Group();
+  scene.add(roomGroup);
+  maskMesh = null;
+  seatGroup = null;
+  exitTargets = [];
+}
+
+// ---------------------------------------------------------------------------
+// GLB room loading
+// ---------------------------------------------------------------------------
+const loader = new GLTFLoader();
+
+function convertMat(m) {
+  if (m && m.isMeshStandardMaterial) return patchMaterial(m, 0.12, 20);
+  const s = new THREE.MeshStandardMaterial({
+    color: m && m.color ? m.color.clone() : 0xffffff,
+    map: m && m.map ? m.map : null, roughness: 0.9,
+  });
+  return patchMaterial(s, 0.12, 20);
+}
+
+function frameFromMesh(mesh, towards) {
+  const g = mesh.geometry;
+  g.computeBoundingBox();
+  const bb = g.boundingBox;
+  const size = bb.getSize(new THREE.Vector3());
+  const center = bb.getCenter(new THREE.Vector3()).applyMatrix4(mesh.matrixWorld);
+  const m3 = new THREE.Matrix3().setFromMatrix4(mesh.matrixWorld);
+  const axes = [new THREE.Vector3(size.x, 0, 0), new THREE.Vector3(0, size.y, 0), new THREE.Vector3(0, 0, size.z)]
+    .map((a) => a.applyMatrix3(m3));
+  const lens = axes.map((a) => a.length());
+  const idx = [0, 1, 2].sort((a, b) => lens[a] - lens[b]);
+  const others = [idx[1], idx[2]];
+  const dirs = axes.map((a, i) => (lens[i] > 1e-6 ? a.clone().divideScalar(lens[i]) : new THREE.Vector3()));
+  const ui = Math.abs(dirs[others[0]].y) > Math.abs(dirs[others[1]].y) ? others[0] : others[1];
+  const ri = ui === others[0] ? others[1] : others[0];
+  const up = dirs[ui].clone(); if (up.y < 0) up.negate();
+  const normal = new THREE.Vector3().crossVectors(dirs[ri], up).normalize();
+  if (normal.dot(new THREE.Vector3().subVectors(towards, center)) < 0) normal.negate();
+  const right = new THREE.Vector3().crossVectors(up, normal).normalize();
+  up.crossVectors(normal, right).normalize();
+  // Curved screen: depth of the bbox is the sag of the arc
+  const sag = lens[idx[0]], chord = lens[ri];
+  let w = chord, deg = 0;
+  if (sag > 0.02 * chord) {
+    const R = (chord * chord / 4 + sag * sag) / (2 * sag);
+    const arc = 2 * Math.asin(Math.min(1, chord / (2 * R)));
+    w = R * arc;
+    deg = Math.min(90, Math.round(THREE.MathUtils.radToDeg(arc)));
+    center.addScaledVector(normal, -sag / 2); // arc middle sits at the back of the bbox
+  }
+  curveDeg = deg;
+  if ($('sCurve')) { $('sCurve').value = deg; $('vCurve').textContent = deg + '\u00b0'; }
+  setScreenBase(center, right, up, normal, w, lens[ui]);
+}
+
+function setStatus(msg, warn = false) {
+  const el = $('status');
+  el.textContent = msg;
+  el.className = 'small' + (warn ? ' warn' : '');
+}
+
+function loadRoomFromGltf(gltf, name) {
+  clearRoom();
+  const root = gltf.scene;
+  roomGroup.add(root);
+  root.updateMatrixWorld(true);
+
+  let screenObj = null, viewObj = null;
+  root.traverse((o) => {
+    const nm = (o.name || '').toLowerCase();
+    const pn = (o.parent && o.parent.name ? o.parent.name : '').toLowerCase();
+    if (!viewObj && /viewpoint|view_point|seat_cam/.test(nm)) viewObj = o;
+    if (o.isMesh) {
+      if (!screenObj && (/screen/.test(nm) || /screen/.test(pn))) screenObj = o;
+      if (/exit/.test(nm) || /exit/.test(pn)) exitTargets.push(o);
+      o.material = Array.isArray(o.material) ? o.material.map(convertMat) : convertMat(o.material);
+    }
+  });
+
+  const roomBox = new THREE.Box3().setFromObject(root);
+  const roomCenter = roomBox.getCenter(new THREE.Vector3());
+  bounds.min.copy(roomBox.min).addScalar(0.25);
+  bounds.max.copy(roomBox.max).addScalar(-0.25);
+  floorAt = () => roomBox.min.y;
+  const viewPos = viewObj ? viewObj.getWorldPosition(new THREE.Vector3()) : null;
+
+  if (screenObj) {
+    frameFromMesh(screenObj, viewPos || roomCenter);
+    screenObj.visible = false;
+  }
+  const f = screenFrame;
+  const eye = viewPos || f.center.clone().addScaledVector(f.normal, Math.max(f.w * 0.9, 3)).setY(f.center.y - f.h * 0.1);
+  setViewpoint(eye, f.center);
+
+  const notes = [];
+  if (!screenObj) notes.push("no mesh named 'Screen' (using previous screen placement)");
+  if (!viewObj) notes.push("no 'Viewpoint' empty (auto placed)");
+  setStatus(`Loaded ${name}` + (notes.length ? ' - ' + notes.join(', ') : ''), notes.length > 0);
+}
+
+// ---------------------------------------------------------------------------
+// Spill pipeline: screen -> 256x144 -> 64x36 -> blur -> temporal smoothing
+// ---------------------------------------------------------------------------
+const SW = 64, SH = 36;
+const rtOpts = {
+  type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+  depthBuffer: false, generateMipmaps: false,
+};
+const rtMid = new THREE.WebGLRenderTarget(256, 144, rtOpts);
+const rtLow = new THREE.WebGLRenderTarget(SW, SH, rtOpts);
+const rtBlur = new THREE.WebGLRenderTarget(SW, SH, rtOpts);
+const rtAcc = [new THREE.WebGLRenderTarget(SW, SH, rtOpts), new THREE.WebGLRenderTarget(SW, SH, rtOpts)];
+let accIdx = 0;
+let firstSpillFrame = true;
+
+const FS_VERT = /* glsl */`varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+function fsMat(frag, uniforms) {
+  return new THREE.ShaderMaterial({ vertexShader: FS_VERT, fragmentShader: frag, uniforms, depthTest: false, depthWrite: false });
+}
+
+// 4x4 box filter inside the output texel footprint (reduces aliasing / flicker)
+const downMat = fsMat(/* glsl */`
+  uniform sampler2D tSrc; uniform vec2 uOutTexel; varying vec2 vUv;
+  void main(){
+    vec3 c = vec3(0.0);
+    for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) {
+      vec2 o = (vec2(float(x), float(y)) - 1.5) * 0.25 * uOutTexel;
+      c += texture2D(tSrc, vUv + o).rgb;
+    }
+    gl_FragColor = vec4(c / 16.0, 1.0);
+  }`, { tSrc: { value: null }, uOutTexel: { value: new THREE.Vector2() } });
+
+// 9-tap separable gaussian (linear sampling trick)
+const blurMat = fsMat(/* glsl */`
+  uniform sampler2D tSrc; uniform vec2 uDir; varying vec2 vUv;
+  void main(){
+    vec3 c = texture2D(tSrc, vUv).rgb * 0.2270270270;
+    c += texture2D(tSrc, vUv + uDir * 1.3846153846).rgb * 0.3162162162;
+    c += texture2D(tSrc, vUv - uDir * 1.3846153846).rgb * 0.3162162162;
+    c += texture2D(tSrc, vUv + uDir * 3.2307692308).rgb * 0.0702702703;
+    c += texture2D(tSrc, vUv - uDir * 3.2307692308).rgb * 0.0702702703;
+    gl_FragColor = vec4(c, 1.0);
+  }`, { tSrc: { value: null }, uDir: { value: new THREE.Vector2() } });
+
+// Exponential moving average so cuts fade instead of popping
+const tempMat = fsMat(/* glsl */`
+  uniform sampler2D tPrev; uniform sampler2D tCur; uniform float uK; varying vec2 vUv;
+  void main(){ gl_FragColor = vec4(mix(texture2D(tPrev, vUv).rgb, texture2D(tCur, vUv).rgb, uK), 1.0); }`,
+  { tPrev: { value: null }, tCur: { value: null }, uK: { value: 1 } });
+
+const fsCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+const fsScene = new THREE.Scene();
+const fsQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), downMat);
+fsQuad.frustumCulled = false;
+fsScene.add(fsQuad);
+function pass(mat, target) {
+  fsQuad.material = mat;
+  renderer.setRenderTarget(target);
+  renderer.render(fsScene, fsCam);
+}
+
+let blurPasses = 3;
+let smoothingMs = 180;
+
+function computeSpill(dt) {
+  const xrWasOn = renderer.xr.enabled;
+  const prevRT = renderer.getRenderTarget();
+  renderer.xr.enabled = false; // offscreen passes must not go through the XR camera
+
+  downMat.uniforms.tSrc.value = currentScreenTex();
+  downMat.uniforms.uOutTexel.value.set(1 / 256, 1 / 144);
+  pass(downMat, rtMid);
+  downMat.uniforms.tSrc.value = rtMid.texture;
+  downMat.uniforms.uOutTexel.value.set(1 / SW, 1 / SH);
+  pass(downMat, rtLow);
+
+  for (let i = 0; i < blurPasses; i++) {
+    blurMat.uniforms.tSrc.value = rtLow.texture; blurMat.uniforms.uDir.value.set(1.5 / SW, 0);
+    pass(blurMat, rtBlur);
+    blurMat.uniforms.tSrc.value = rtBlur.texture; blurMat.uniforms.uDir.value.set(0, 1.5 / SH);
+    pass(blurMat, rtLow);
+  }
+
+  const tau = smoothingMs / 1000;
+  const k = (firstSpillFrame || tau <= 0) ? 1 : 1 - Math.exp(-dt / tau);
+  tempMat.uniforms.tPrev.value = rtAcc[accIdx].texture;
+  tempMat.uniforms.tCur.value = rtLow.texture;
+  tempMat.uniforms.uK.value = k;
+  pass(tempMat, rtAcc[1 - accIdx]);
+  accIdx = 1 - accIdx;
+  firstSpillFrame = false;
+
+  spillU.uSpillTex.value = rtAcc[accIdx].texture;
+  hudMat.map = rtAcc[accIdx].texture;
+
+  renderer.xr.enabled = xrWasOn;
+  renderer.setRenderTarget(prevRT);
+}
+
+// ---------------------------------------------------------------------------
+// Debug HUD (desktop only)
+// ---------------------------------------------------------------------------
+const hudScene = new THREE.Scene();
+const hudCam = new THREE.OrthographicCamera(0, 1, 1, 0, -1, 1);
+const hudMat = new THREE.MeshBasicMaterial({ map: rtAcc[0].texture, toneMapped: false });
+const hudQuad = new THREE.Mesh(new THREE.PlaneGeometry(256, 144), hudMat);
+hudScene.add(hudQuad);
+let showDebug = true;
+
+function layoutHud() {
+  hudCam.left = 0; hudCam.right = window.innerWidth;
+  hudCam.top = window.innerHeight; hudCam.bottom = 0;
+  hudCam.updateProjectionMatrix();
+  hudQuad.position.set(window.innerWidth - 128 - 16, 72 + 90, 0);
+}
+layoutHud();
+
+// ---------------------------------------------------------------------------
+// UI
+// ---------------------------------------------------------------------------
+function bindSlider(id, valId, fmt, onChange) {
+  const s = $(id), v = $(valId);
+  const upd = () => { const x = parseFloat(s.value); v.textContent = fmt(x); onChange(x); };
+  s.addEventListener('input', upd); upd();
+}
+bindSlider('sInt', 'vInt', (x) => x.toFixed(1), (x) => { spillU.uSpillIntensity.value = x; });
+bindSlider('sSmooth', 'vSmooth', (x) => x + 'ms', (x) => { smoothingMs = x; });
+bindSlider('sBlur', 'vBlur', (x) => String(x), (x) => { blurPasses = x; });
+bindSlider('sSize', 'vSize', (x) => Math.round(x * 100) + '%', (x) => { screenSize = x; applyScreenLayout(); });
+bindSlider('sCurve', 'vCurve', (x) => x + '\u00b0', (x) => { curveDeg = x; rebuildScreen(); });
+bindSlider('sSpec', 'vSpec', (x) => x.toFixed(2), (x) => { spillU.uSpillSpecMul.value = x; });
+bindSlider('sAmb', 'vAmb', (x) => x.toFixed(2), (x) => { hemi.intensity = x; });
+
+$('sZones').addEventListener('change', (e) => {
+  const [x, y] = e.target.value.split('x').map(Number);
+  zonesX = x; zonesY = y; rebuildZones();
+});
+
+if (settings.sZones) { $('sZones').value = settings.sZones; $('sZones').dispatchEvent(new Event('change')); }
+$('sZones').addEventListener('change', () => { settings.sZones = $('sZones').value; saveSettings(); });
+
+function setSpill(on) {
+  spillU.uSpillOn.value = on ? 1 : 0;
+  $('spillOn').checked = on;
+  settings.spill = on; saveSettings();
+}
+if (settings.spill === false) setSpill(false);
+$('spillOn').addEventListener('change', (e) => setSpill(e.target.checked));
+$('dbg').addEventListener('change', (e) => {
+  showDebug = e.target.checked;
+  $('hudLabel').style.display = showDebug ? '' : 'none';
+});
+
+function setSource(s) {
+  source = s;
+  $('btnDemo').classList.toggle('on', s === 'demo');
+  $('btnVideo').classList.toggle('on', s === 'video');
+  $('btnPc').classList.toggle('on', s === 'stream');
+  screenMat.map = currentScreenTex();
+  screenMat.needsUpdate = true;
+  if (s !== 'video') video.pause();
+  if (s === 'demo') { lastSceneIdx = -1; setContentAspect(16 / 9); }
+  const v = activeVideo();
+  if (v && v.videoWidth) setContentAspect(v.videoWidth / v.videoHeight);
+  updatePlayLabel();
+}
+function isPaused() {
+  const v = activeVideo();
+  return v ? v.paused : demoPaused;
+}
+function updatePlayLabel() {
+  $('btnPlay').textContent = isPaused() ? 'Play' : 'Pause';
+}
+function togglePlay() {
+  const v = activeVideo();
+  if (v) { if (v.paused) v.play().catch(() => {}); else v.pause(); }
+  else demoPaused = !demoPaused;
+  updatePlayLabel();
+}
+function nextDemoScene() {
+  if (source !== 'demo') return;
+  demoTime = (Math.floor(demoTime / SCENE_LEN) + 1) * SCENE_LEN;
+}
+
+$('btnDemo').onclick = () => setSource('demo');
+$('btnVideo').onclick = () => $('fileVideo').click();
+$('btnPlay').onclick = togglePlay;
+for (const v of [video, streamVideo]) {
+  v.addEventListener('play', updatePlayLabel);
+  v.addEventListener('pause', updatePlayLabel);
+  const fit = () => { if (activeVideo() === v && v.videoWidth) setContentAspect(v.videoWidth / v.videoHeight); };
+  v.addEventListener('loadedmetadata', fit);
+  v.addEventListener('resize', fit);
+}
+
+// ---------------------------------------------------------------------------
+// PC link (WebRTC via PeerJS). The Is3meo Bridge (or the sender page) on the PC waits as
+// "is3meo-pc-<code>". We open a data channel to it (remote mouse/keys + commands) and the PC
+// calls us back with its screen stream. The code is remembered, so the Quest can start alone.
+// ---------------------------------------------------------------------------
+let peer = null, pcConn = null, pcCall = null, pcState = 'off', pcCode = '', pcInfo = {};
+let pcRetry = null;
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* storage blocked */ } }
+function setStreamInfo(msg) { $('streamInfo').textContent = msg; if (typeof menuDirty !== 'undefined') menuDirty = true; }
+function pcSend(msg) { if (pcConn && pcConn.open) pcConn.send(msg); }
+// Opus defaults to mono ~32 kbps; ask for stereo at a movie-friendly bitrate
+function stereoSdp(sdp) {
+  return sdp.replace(/a=fmtp:(\d+) (.*useinbandfec=1.*)/g, (m, pt, params) =>
+    params.includes('stereo=1') ? m : `a=fmtp:${pt} ${params};stereo=1;sprop-stereo=1;maxaveragebitrate=256000`);
+}
+
+function connectPc() {
+  const code = $('pcCode').value.trim();
+  if (!/^[A-Za-z0-9]{4,16}$/.test(code)) { setStreamInfo('Type the PC code shown by the Bridge on the PC'); return; }
+  if (typeof Peer === 'undefined') { setStreamInfo('PeerJS failed to load (offline?)'); return; }
+  disconnectPc(true);
+  pcCode = code;
+  lsSet('is3meo.pcCode', code);
+  pcState = 'connecting';
+  $('btnPc').textContent = 'Disconnect';
+  setStreamInfo('Connecting to PC ' + code + '...');
+  peer = new Peer();
+  peer.on('open', () => {
+    pcConn = peer.connect('is3meo-pc-' + code, { reliable: true });
+    pcConn.on('open', () => {
+      pcState = 'linked';
+      setStreamInfo('Linked to PC ' + code + ' - waiting for video...');
+      pcSend({ t: 'hello', v: APP_VERSION });
+    });
+    pcConn.on('data', (m) => {
+      if (m && m.t === 'apps') { setPcApps(m.apps, m.auto); return; }
+      if (m && m.t === 'profiles') { setUserProfiles(m.list); return; }
+      if (!m || m.t !== 'info') return;
+      pcInfo = m;
+      if (m.bridge) pcSend({ t: 'cmd', c: 'listApps' }); // ask the Bridge which apps are configured
+      if (!m.bridge && pcState !== 'live') setStreamInfo('Linked to the sender page (no Bridge): video only, no remote control. Click Share on the PC.');
+    });
+    pcConn.on('close', () => { pcState = 'off'; pcInfo = {}; pcApps = []; setStreamInfo('PC link closed'); scheduleRetry(); });
+  });
+  peer.on('call', (call) => {
+    if (pcCall) pcCall.close();
+    pcCall = call;
+    call.answer(undefined, { sdpTransform: stereoSdp }); // receive only, ask for stereo Opus
+    call.on('stream', (ms) => {
+      streamVideo.srcObject = ms;
+      if (!streamTex) { streamTex = sharpTex(new THREE.VideoTexture(streamVideo)); }
+      pcState = 'live';
+      $('srcName').textContent = 'PC stream (' + pcCode + ')';
+      setSource('stream');
+      streamVideo.play().then(() => setStreamInfo('Live from PC ' + pcCode + (pcInfo.bridge ? ' - remote control on' : '')))
+        .catch(() => setStreamInfo('Live - press Play (or Enter VR) to start, the browser needs a tap'));
+    });
+    call.on('close', () => { if (pcState === 'live') { pcState = 'linked'; setStreamInfo('PC stopped sharing'); } });
+  });
+  peer.on('error', (e) => {
+    if (e.type === 'peer-unavailable') {
+      pcState = 'off';
+      setStreamInfo('PC ' + code + ' not found. Is the Bridge running?' + ($('pcAuto').checked ? ' Retrying...' : ''));
+      scheduleRetry();
+    } else setStreamInfo('Link error: ' + e.type);
+  });
+}
+
+function scheduleRetry() {
+  if (!$('pcAuto').checked || pcRetry) return;
+  pcRetry = setTimeout(() => { pcRetry = null; if (pcState === 'off' && peer) connectPc(); }, 5000);
+}
+
+function disconnectPc(silent) {
+  if (pcRetry) { clearTimeout(pcRetry); pcRetry = null; }
+  if (pcCall) pcCall.close();
+  if (peer) peer.destroy();
+  peer = pcConn = pcCall = null;
+  pcState = 'off';
+  pcInfo = {};
+  if (!silent) {
+    $('btnPc').textContent = 'Connect';
+    setStreamInfo('Disconnected');
+    if (source === 'stream') setSource('demo');
+  }
+}
+
+$('btnPc').onclick = () => { if (peer) disconnectPc(false); else connectPc(); };
+$('pcCode').value = lsGet('is3meo.pcCode', '');
+$('pcAuto').checked = lsGet('is3meo.pcAuto', '1') === '1';
+$('pcAuto').addEventListener('change', (e) => lsSet('is3meo.pcAuto', e.target.checked ? '1' : '0'));
+pcCode = $('pcCode').value;
+// Auto connect with the remembered code: open the page on the Quest and the PC starts sharing
+if ($('pcAuto').checked && /^[A-Za-z0-9]{4,16}$/.test($('pcCode').value)) setTimeout(connectPc, 800);
+
+
+$('fileVideo').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  if (video.src) URL.revokeObjectURL(video.src);
+  video.src = URL.createObjectURL(f);
+  video.play().catch(() => {});
+  if (!videoTex) { videoTex = sharpTex(new THREE.VideoTexture(video)); }
+  $('srcName').textContent = 'Video: ' + f.name;
+  video.muted = false;
+  setSource('video');
+  e.target.value = '';
+});
+
+$('btnGlb').onclick = () => $('fileGlb').click();
+$('fileGlb').addEventListener('change', async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  setStatus('Loading ' + f.name + '...');
+  const buf = await f.arrayBuffer();
+  loader.parse(buf, '', (gltf) => loadRoomFromGltf(gltf, f.name), (err) => setStatus('GLB load failed: ' + (err.message || err), true));
+  e.target.value = '';
+});
+function bindKitInput(btn, input, which) {
+  $(btn).onclick = () => $(input).click();
+  $(input).addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (!seatGroup) { setStatus('Load the default room first (the seat kit uses its layout)', true); e.target.value = ''; return; }
+    setStatus('Loading ' + f.name + '...');
+    const buf = await f.arrayBuffer();
+    loader.parse(buf, '', (gltf) => loadKitPart(which, gltf, f.name), (err) => setStatus('GLB failed: ' + (err.message || err), true));
+    e.target.value = '';
+  });
+}
+bindKitInput('btnSeat', 'fileSeat', 'seat');
+bindKitInput('btnArm', 'fileArm', 'arm');
+$('btnKitReset').onclick = () => { kit.seat = kit.arm = null; buildSeatMeshes(); loadRepoKit(); };
+$('btnKitDownload').onclick = () => downloadSeatKit();
+$('btnRoom').onclick = () => { clearRoom(); buildDefaultRoom(); setStatus('Default room'); };
+
+let uiHidden = false;
+function toggleUi() {
+  uiHidden = !uiHidden;
+  $('panel').style.display = uiHidden ? 'none' : '';
+  $('hudLabel').style.display = (uiHidden || !showDebug) ? 'none' : '';
+}
+
+$('btnReset').onclick = () => resetView();
+$('btnAbout').onclick = () => $('about').classList.remove('hidden');
+$('btnAboutClose').onclick = () => $('about').classList.add('hidden');
+
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' && e.target.type !== 'checkbox' && e.target.type !== 'range') return;
+  if (e.code === 'KeyL') setSpill(spillU.uSpillOn.value < 0.5);
+  if (e.code === 'KeyN') nextDemoScene();
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'KeyH') toggleUi();
+  if (e.code === 'KeyR') resetView();
+  keys.add(e.code);
+});
+window.addEventListener('keyup', (e) => keys.delete(e.code));
+window.addEventListener('blur', () => keys.clear());
+
+// ---------------------------------------------------------------------------
+// Desktop navigation: WASD fly, drag to look, wheel = FOV
+// ---------------------------------------------------------------------------
+const keys = new Set();
+const _f = new THREE.Vector3(), _r = new THREE.Vector3(), _m = new THREE.Vector3();
+function updateDesktop(dt) {
+  const fast = keys.has('ShiftLeft') || keys.has('ShiftRight');
+  const sp = (fast ? 8 : 3) * dt;
+  _f.set(-Math.sin(camYaw), 0, -Math.cos(camYaw));
+  _r.set(Math.cos(camYaw), 0, -Math.sin(camYaw));
+  _m.set(0, 0, 0);
+  if (keys.has('KeyW') || keys.has('ArrowUp')) _m.add(_f);
+  if (keys.has('KeyS') || keys.has('ArrowDown')) _m.sub(_f);
+  if (keys.has('KeyD') || keys.has('ArrowRight')) _m.add(_r);
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) _m.sub(_r);
+  if (keys.has('KeyE')) _m.y += 1;
+  if (keys.has('KeyQ')) _m.y -= 1;
+  if (_m.lengthSq() > 0) camera.position.addScaledVector(_m.normalize(), sp);
+  clampToRoom(camera.position, 1.15); // keep the desktop eye at least at seated height
+}
+
+let dragging = false, lastX = 0, lastY = 0;
+const cv = renderer.domElement;
+cv.addEventListener('pointerdown', (e) => { dragging = true; lastX = e.clientX; lastY = e.clientY; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', (e) => {
+  if (!dragging || renderer.xr.isPresenting) return;
+  const s = 0.0025 * (camera.fov / 60);
+  camYaw -= (e.clientX - lastX) * s;
+  camPitch = THREE.MathUtils.clamp(camPitch - (e.clientY - lastY) * s, -1.5, 1.5);
+  lastX = e.clientX; lastY = e.clientY;
+  applyCamRot();
+});
+cv.addEventListener('pointerup', () => { dragging = false; });
+cv.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  if (renderer.xr.isPresenting) return;
+  camera.fov = THREE.MathUtils.clamp(camera.fov + Math.sign(e.deltaY) * 3, 20, 100);
+  camera.updateProjectionMatrix();
+}, { passive: false });
+
+// ---------------------------------------------------------------------------
+// VR navigation: left stick move, right stick snap turn / up-down, A/X reset
+// ---------------------------------------------------------------------------
+const SNAP = Math.PI / 6;
+const MOVE_SPEED = 1.0, MOVE_BOOST = 4.5; // m/s
+const TURN_SPEED = THREE.MathUtils.degToRad(110); // smooth turn, deg per second
+let smoothTurn = settings.smoothTurn !== false;
+let snapReady = true;
+const prevBtn = {};
+const _head = new THREE.Vector3(), _dir = new THREE.Vector3(), _side = new THREE.Vector3();
+const _q = new THREE.Quaternion();
+const dz = (v) => (Math.abs(v) < 0.15 ? 0 : v);
+
+function snapTurn(angle, pivot) {
+  _q.setFromAxisAngle(Y_AXIS, angle);
+  dolly.position.sub(pivot).applyQuaternion(_q).add(pivot);
+  dolly.quaternion.premultiply(_q);
+}
+
+// ---------------------------------------------------------------------------
+// In-VR menu (floating panel). Y = show/hide, L-stick select, R-stick adjust, A/trigger confirm
+// ---------------------------------------------------------------------------
+const MENU_H = 1078, MENU_Y0 = 84, MENU_RH = 34; // menu canvas layout (also used by the laser)
+const menuCanvas = document.createElement('canvas');
+menuCanvas.width = 512; menuCanvas.height = MENU_H;
+const menuCtx = menuCanvas.getContext('2d');
+const menuTex = new THREE.CanvasTexture(menuCanvas);
+menuTex.colorSpace = THREE.SRGBColorSpace;
+const menuMesh = new THREE.Mesh(
+  new THREE.PlaneGeometry(0.4, 0.4 * MENU_H / 512),
+  new THREE.MeshBasicMaterial({ map: menuTex, transparent: true, toneMapped: false, depthTest: false })
+);
+menuMesh.renderOrder = 999;
+menuMesh.visible = false;
+scene.add(menuMesh);
+let menuSel = 0, menuDirty = true, menuTimer = 0;
+
+function sliderItem(label, id, fmt) {
+  const el = $(id);
+  return {
+    label,
+    value: () => fmt(parseFloat(el.value)),
+    adjust: (dir) => {
+      const min = +el.min, max = +el.max, st = +el.step;
+      const step = Math.max(st, (max - min) / 40);
+      let v = THREE.MathUtils.clamp(parseFloat(el.value) + dir * step, min, max);
+      v = Math.round(v / st) * st;
+      el.value = v;
+      el.dispatchEvent(new Event('input')); // keeps the desktop panel and saved settings in sync
+    },
+  };
+}
+const toggleSpillItem = () => setSpill(spillU.uSpillOn.value < 0.5);
+const MENU = [
+  { label: 'Light spill', value: () => (spillU.uSpillOn.value > 0.5 ? 'ON' : 'OFF'), adjust: toggleSpillItem, act: toggleSpillItem },
+  sliderItem('Screen size', 'sSize', (x) => Math.round(x * 100) + '%'),
+  sliderItem('Curvature', 'sCurve', (x) => x + '\u00b0'),
+  sliderItem('Intensity', 'sInt', (x) => x.toFixed(1)),
+  sliderItem('Specular', 'sSpec', (x) => x.toFixed(2)),
+  sliderItem('Smoothing', 'sSmooth', (x) => x + ' ms'),
+  sliderItem('Blur passes', 'sBlur', (x) => String(x)),
+  sliderItem('Ambient', 'sAmb', (x) => x.toFixed(2)),
+  {
+    label: 'Zones', value: () => $('sZones').value,
+    adjust: (d) => {
+      const el = $('sZones');
+      el.selectedIndex = (el.selectedIndex + d + el.options.length) % el.options.length;
+      el.dispatchEvent(new Event('change'));
+    },
+  },
+  {
+    label: 'Source', value: () => (source === 'demo' ? 'demo' : source === 'video' ? 'file' : 'PC stream'),
+    adjust: () => {
+      const order = ['demo'].concat(videoTex ? ['video'] : [], streamTex ? ['stream'] : []);
+      setSource(order[(order.indexOf(source) + 1) % order.length]);
+    },
+  },
+  { label: 'Demo scene', value: () => (source === 'demo' ? SCENES[Math.max(0, lastSceneIdx)] : '-'), adjust: (d) => { if (d > 0) nextDemoScene(); }, act: nextDemoScene },
+  { label: 'Play / Pause', value: () => (isPaused() ? 'paused' : 'playing'), act: togglePlay },
+  { label: 'PC link', value: () => (pcState === 'off' ? 'off' : pcState) + (pcCode ? ' ' + pcCode : ''), act: () => { if (peer) disconnectPc(false); else connectPc(); } },
+  { label: 'PC app (A = open)', value: () => (!pcInfo.bridge ? 'needs Bridge' : currentApp() ? '\u25c0 ' + currentApp().name + (currentApp().found ? '' : ' (not found)') + ' \u25b6' : 'none set'), adjust: (d) => cycleApp(d), act: () => openPlayer() },
+  { label: 'Control mode (X)', value: () => MODE_NAMES[mode], adjust: (d) => cycleMode(d), act: () => cycleMode(1) },
+  { label: 'Player profile', value: () => profile().name, adjust: (d) => cycleProfile(d), act: () => cycleProfile(1) },
+  { label: 'Seat row', value: () => String(currentRow), adjust: (d) => goToSeat(currentRow + d), act: () => goToSeat(currentRow) },
+  { label: 'Favorite seat (L3)', value: () => (seatRows.includes(currentRow) ? '\u2605 ' : '') + seatRows.join(','), act: () => toggleFavoriteSeat(), adjust: () => toggleFavoriteSeat() },
+  { label: 'Laser', value: () => laserMode, adjust: () => cycleLaserMode(), act: () => cycleLaserMode() },
+  { label: 'Button hints', value: () => hintsMode, adjust: () => cycleHintsMode(), act: () => cycleHintsMode() },
+  { label: 'Screen filter', value: () => settings.screenFilter || 'balanced', adjust: (d) => cycleScreenFilter(d), act: () => cycleScreenFilter(1) },
+  {
+    label: 'VR resolution', value: () => Math.round((settings.renderScale || 1) * 100) + '%',
+    adjust: (d) => { cycleRenderScale(d); }, act: () => cycleRenderScale(1),
+  },
+  { label: 'Turn', value: () => (smoothTurn ? 'smooth' : 'snap 30\u00b0'), adjust: () => { smoothTurn = !smoothTurn; settings.smoothTurn = smoothTurn; saveSettings(); }, act: () => { smoothTurn = !smoothTurn; settings.smoothTurn = smoothTurn; saveSettings(); } },
+  { label: 'Next favorite seat', value: () => 'L3', act: () => { closeMenu(); nextSeat(); } },
+  { label: 'Close menu', value: () => '', act: () => closeMenu() },
+];
+
+function drawMenu() {
+  const c = menuCtx, W = 512, H = MENU_H;
+  c.clearRect(0, 0, W, H);
+  c.fillStyle = 'rgba(12,14,20,0.93)';
+  c.strokeStyle = '#ffb347'; c.lineWidth = 3;
+  c.beginPath();
+  if (c.roundRect) c.roundRect(4, 4, W - 8, H - 8, 24); else c.rect(4, 4, W - 8, H - 8);
+  c.fill(); c.stroke();
+  c.textBaseline = 'middle';
+  c.textAlign = 'left'; c.fillStyle = '#ffb347'; c.font = 'bold 30px system-ui, sans-serif';
+  c.fillText('Light Spill Lab', 28, 48);
+  c.textAlign = 'right'; c.fillStyle = '#8a90a2'; c.font = '20px monospace';
+  c.fillText('v' + APP_VERSION + '  ' + fps + ' fps', W - 28, 48);
+  const y0 = MENU_Y0, rh = MENU_RH;
+  MENU.forEach((it, i) => {
+    const y = y0 + i * rh;
+    if (i === menuSel) { c.fillStyle = 'rgba(255,179,71,0.18)'; c.fillRect(16, y, W - 32, rh - 4); }
+    c.textAlign = 'left'; c.fillStyle = i === menuSel ? '#ffffff' : '#dfe3ee'; c.font = '22px system-ui, sans-serif';
+    c.fillText(it.label, 30, y + rh / 2 - 2);
+    c.textAlign = 'right'; c.fillStyle = i === menuSel ? '#ffb347' : '#8a90a2'; c.font = '20px monospace';
+    c.fillText(it.value(), W - 30, y + rh / 2 - 2);
+  });
+  c.textAlign = 'left'; c.fillStyle = '#8a90a2'; c.font = '17px system-ui, sans-serif';
+  c.fillText('Laser or L-stick: select   R-stick: adjust', 28, H - 62);
+  c.fillText('Trigger / A: confirm   Y: close menu', 28, H - 34);
+  menuTex.needsUpdate = true;
+}
+
+function openMenu() {
+  if (leftGrip) {
+    // Clipboard style panel above the left controller: always with you
+    leftGrip.add(menuMesh);
+    menuMesh.scale.setScalar(0.6);
+    menuMesh.position.set(0, 0.22, -0.02);
+    menuMesh.rotation.set(-0.5, 0, 0);
+  } else {
+    // Fallback: float in front of the head
+    scene.add(menuMesh);
+    menuMesh.scale.setScalar(1);
+    camera.getWorldPosition(_head);
+    camera.getWorldDirection(_dir);
+    _dir.y = 0; if (_dir.lengthSq() < 1e-6) _dir.set(0, 0, -1); _dir.normalize();
+    menuMesh.position.copy(_head).addScaledVector(_dir, 0.5);
+    menuMesh.position.y -= 0.12;
+    menuMesh.lookAt(_head);
+  }
+  menuMesh.visible = true;
+  menuDirty = true;
+}
+function closeMenu() { menuMesh.visible = false; }
+function toggleMenu() { if (menuMesh.visible) closeMenu(); else openMenu(); }
+
+function updateMenu(dt) {
+  if (!menuMesh.visible) return;
+  menuTimer -= dt;
+  if (menuDirty || menuTimer <= 0) { drawMenu(); menuDirty = false; menuTimer = 0.5; }
+}
+
+// ---------------------------------------------------------------------------
+// Control modes: CINEMA (walk around), MEDIA (player shortcuts), PC (laser = mouse).
+// X cycles the mode, holding the LEFT GRIP is ALT (second layer of commands).
+// Media commands come from a player profile (profiles/*.json), so other PC players can be mapped.
+// ---------------------------------------------------------------------------
+const MODES = ['fly', 'media', 'pc'];
+const MODE_NAMES = { fly: 'FLY', media: 'MEDIA', pc: 'PC' };
+if (settings.mode === 'cinema') settings.mode = 'fly'; // renamed in v0.9.0
+let mode = MODES.includes(settings.mode) ? settings.mode : 'fly';
+
+// Built-in profiles (the repo can add more in profiles/index.json)
+const BUILTIN_PROFILES = {
+  stremio: {
+    id: 'stremio', name: 'Stremio', app: 'stremio',
+    actions: {
+      playPause: { key: 'Space', label: 'Play/Pause' },
+      seekBack: { key: 'ArrowLeft', label: '-20s' }, seekFwd: { key: 'ArrowRight', label: '+20s' },
+      seekBackSmall: { key: 'ArrowLeft', mods: ['Shift'], label: '-10s' }, seekFwdSmall: { key: 'ArrowRight', mods: ['Shift'], label: '+10s' },
+      volUp: { key: 'ArrowUp', label: 'Vol +' }, volDown: { key: 'ArrowDown', label: 'Vol -' },
+      mute: { key: 'VolumeMute', label: 'Mute' },
+      fullscreen: { key: 'KeyF', label: 'Fullscreen' }, back: { key: 'Escape', label: 'Back' },
+      showUI: { key: 'KeyT', label: 'Player UI' }, next: { key: 'KeyN', mods: ['Shift'], label: 'Next episode' },
+      subSizeUp: { key: 'Equal', label: 'Subs bigger' }, subSizeDown: { key: 'Minus', label: 'Subs smaller' },
+      subDelayUp: { key: 'KeyH', label: 'Subs +250ms' }, subDelayDown: { key: 'KeyG', label: 'Subs -250ms' },
+    },
+  },
+  generic: {
+    id: 'generic', name: 'Generic (media keys)', app: '',
+    actions: {
+      playPause: { key: 'MediaPlayPause', label: 'Play/Pause' },
+      seekBack: { key: 'ArrowLeft', label: 'Seek -' }, seekFwd: { key: 'ArrowRight', label: 'Seek +' },
+      seekBackSmall: { key: 'ArrowLeft', label: 'Seek -' }, seekFwdSmall: { key: 'ArrowRight', label: 'Seek +' },
+      volUp: { key: 'VolumeUp', label: 'Vol +' }, volDown: { key: 'VolumeDown', label: 'Vol -' },
+      mute: { key: 'VolumeMute', label: 'Mute' },
+      fullscreen: { key: 'F11', label: 'Fullscreen' }, back: { key: 'Escape', label: 'Back' },
+      showUI: { key: 'Space', label: 'Play/Pause' }, next: { key: 'MediaNextTrack', label: 'Next' },
+      subSizeUp: null, subSizeDown: null, subDelayUp: null, subDelayDown: null,
+    },
+  },
+};
+const profiles = { ...BUILTIN_PROFILES };
+const defaultProfiles = { ...BUILTIN_PROFILES }; // built-ins + repo, to restore when a custom mapping is reset
+let userProfileIds = new Set();
+
+// Button mappings made in the Bridge "Button Mapping" tab (override the default profile with the same id)
+function setUserProfiles(list) {
+  for (const id of userProfileIds) { if (defaultProfiles[id]) profiles[id] = defaultProfiles[id]; else delete profiles[id]; }
+  userProfileIds = new Set();
+  for (const p of Array.isArray(list) ? list : []) {
+    if (!p || !p.id) continue;
+    profiles[p.id] = { actions: {}, ...p, user: true };
+    userProfileIds.add(p.id);
+  }
+  if (!profiles[profileId]) profileId = 'stremio';
+  if (typeof useAppProfile === 'function' && pcApps.length) useAppProfile();
+  hintsDirty = true; menuDirty = true;
+}
+
+// Profile v2: buttons.media.{base, altL, altR}[slot] = {type: 'key'|'openApp'|'none', key, mods, label, action?}
+// Old profiles only have "actions": this builds the MEDIA layout they always had
+function legacyMedia(p) {
+  const A = (p && p.actions) || {};
+  const k = (name) => { const a = A[name]; return a && a.key ? { type: 'key', key: a.key, mods: a.mods || [], label: a.label || name, action: name } : { type: 'none' }; };
+  return {
+    base: { 'R.a': k('playPause'), 'R.b': k('back'), 'R.left': k('seekBack'), 'R.right': k('seekFwd'), 'R.up': k('volUp'), 'R.down': k('volDown'),
+      'L.left': k('seekBackSmall'), 'L.right': k('seekFwdSmall'),
+      'R.trigger': { type: 'key', key: 'Enter', mods: [], label: 'Select (Enter)', action: 'playPause' }, 'L.trigger': { type: 'openApp', label: '' } },
+    altL: { 'R.a': k('next'), 'R.b': k('mute'), 'R.left': k('subDelayDown'), 'R.right': k('subDelayUp'), 'R.up': k('subSizeUp'), 'R.down': k('subSizeDown') },
+    altR: { 'R.a': k('fullscreen'), 'R.b': k('showUI'), 'R.trigger': { type: 'openApp', label: '' } },
+  };
+}
+function mediaLayer(alt) {
+  const p = profile();
+  const media = (p.buttons && p.buttons.media) || p._legacyMedia || (p._legacyMedia = legacyMedia(p));
+  return media[alt === 'L' ? 'altL' : alt === 'R' ? 'altR' : 'base'] || {};
+}
+function slotText(sl) {
+  if (!sl || sl.type === 'none' || !sl.type) return '';
+  if (sl.type === 'openApp') return sl.label || 'Open ' + appName();
+  return sl.label || [...(sl.mods || []), sl.key].join('+');
+}
+// Run one mapped button: a key on the PC, open the picked app, or the local fallback (demo / video file)
+function runSlot(sl) {
+  if (!sl || sl.type === 'none' || !sl.type) return false;
+  if (sl.type === 'openApp') { openPlayer(); return true; }
+  if (pcConn && pcConn.open && source === 'stream') {
+    pcSend({ t: 'key', k: sl.key, mods: sl.mods || [] });
+    if (sl.action === 'playPause') pcSend({ t: 'park' });
+    return true;
+  }
+  if (pcConn && pcConn.open) { pcSend({ t: 'key', k: sl.key, mods: sl.mods || [] }); return true; }
+  if (sl.action) { doAction(sl.action); return true; }
+  return false;
+}
+let profileId = settings.profile && profiles[settings.profile] ? settings.profile : 'stremio';
+const profile = () => profiles[profileId] || profiles.stremio;
+const actLabel = (name, fallback) => { const a = profile().actions[name]; return a ? (a.label || fallback) : '-'; };
+
+// Community profiles from the repo (profiles/index.json lists the ids)
+fetch('../profiles/index.json?t=' + Date.now())
+  .then((r) => (r.ok ? r.json() : []))
+  .then((ids) => Promise.all(ids.map((id) => fetch('../profiles/' + id + '.json?t=' + Date.now()).then((r) => (r.ok ? r.json() : null)).catch(() => null))))
+  .then((list) => {
+    for (const p of list) if (p && p.id && (p.actions || p.buttons)) {
+      defaultProfiles[p.id] = p;
+      if (!userProfileIds.has(p.id)) profiles[p.id] = p; // a custom mapping from the Bridge wins
+    }
+    if (settings.profile && profiles[settings.profile]) profileId = settings.profile;
+    if (pcApps.length) useAppProfile(); // app list arrived before the profiles
+    hintsDirty = true; menuDirty = true;
+  })
+  .catch(() => { /* offline or file:// - built-ins only */ });
+
+function cycleProfile(d = 1) {
+  const ids = Object.keys(profiles);
+  profileId = ids[(ids.indexOf(profileId) + d + ids.length) % ids.length];
+  settings.profile = profileId; saveSettings();
+  hintsDirty = true; menuDirty = true;
+  toast('Player: ' + profile().name);
+}
+
+// Run a media action: on the PC through the profile, or locally on the demo / video file
+function doAction(name) {
+  if (source === 'stream' && pcConn && pcConn.open) {
+    const a = profile().actions[name];
+    if (!a) return;
+    pcSend({ t: 'key', k: a.key, mods: a.mods || [] });
+    if (name === 'playPause') pcSend({ t: 'park' }); // hide the mouse cursor from the picture
+    return;
+  }
+  const v = activeVideo();
+  switch (name) {
+    case 'playPause': togglePlay(); break;
+    case 'seekFwd': if (v && !v.srcObject) v.currentTime += 20; else nextDemoScene(); break;
+    case 'seekBack': if (v && !v.srcObject) v.currentTime = Math.max(0, v.currentTime - 20); break;
+    case 'seekFwdSmall': if (v && !v.srcObject) v.currentTime += 10; break;
+    case 'seekBackSmall': if (v && !v.srcObject) v.currentTime = Math.max(0, v.currentTime - 10); break;
+    case 'volUp': if (v) v.volume = Math.min(1, v.volume + 0.1); break;
+    case 'volDown': if (v) v.volume = Math.max(0, v.volume - 0.1); break;
+    case 'mute': if (v) v.muted = !v.muted; break;
+    case 'next': nextDemoScene(); break;
+    default: break;
+  }
+}
+
+// Apps configured in the Bridge Settings tab (the Bridge sends the list when the Quest links / asks)
+let pcApps = [];
+let pcAppId = settings.pcApp || '';
+const currentApp = () => pcApps.find((a) => a.id === pcAppId) || pcApps[0] || null;
+const appName = () => (currentApp() ? currentApp().name : profile().name);
+
+function setPcApps(list, auto) {
+  pcApps = Array.isArray(list) ? list : [];
+  if (!pcApps.some((a) => a.id === pcAppId)) pcAppId = auto && pcApps.some((a) => a.id === auto) ? auto : (pcApps[0] ? pcApps[0].id : '');
+  useAppProfile();
+  menuDirty = true; hintsDirty = true;
+}
+
+// Picking an app also picks its control profile
+function useAppProfile() {
+  const a = currentApp();
+  if (a && a.profile && profiles[a.profile] && profileId !== a.profile) {
+    profileId = a.profile; settings.profile = profileId; saveSettings();
+  }
+}
+
+function cycleApp(d = 1) {
+  if (!pcApps.length) { toast(pcInfo.bridge ? 'No apps set in the Bridge Settings' : 'Needs the Bridge'); return; }
+  const i = Math.max(0, pcApps.findIndex((a) => a.id === pcAppId));
+  pcAppId = pcApps[(i + d + pcApps.length) % pcApps.length].id;
+  settings.pcApp = pcAppId; saveSettings();
+  useAppProfile();
+  menuDirty = true; hintsDirty = true;
+  toast('App: ' + appName() + ' (' + profile().name + ' controls)');
+}
+
+function openPlayer() {
+  if (!(pcConn && pcConn.open)) { toast('PC not linked'); return; }
+  const a = currentApp();
+  pcSend({ t: 'cmd', c: 'openApp', app: a ? a.id : (profile().app || 'stremio') });
+  toast('Opening ' + appName() + ' on the PC', MODE_COLORS[mode]);
+}
+
+const RENDER_SCALES = [1, 1.2, 1.4];
+function cycleRenderScale(d = 1) {
+  const i = RENDER_SCALES.indexOf(settings.renderScale || 1);
+  settings.renderScale = RENDER_SCALES[(Math.max(0, i) + d + RENDER_SCALES.length) % RENDER_SCALES.length];
+  saveSettings();
+  if (!renderer.xr.isPresenting) renderer.xr.setFramebufferScaleFactor(settings.renderScale);
+  toast('VR resolution ' + Math.round(settings.renderScale * 100) + '% (next time you enter VR)');
+  menuDirty = true;
+}
+
+function cycleScreenFilter(d = 1) {
+  const i = SCREEN_FILTERS.indexOf(settings.screenFilter || 'balanced');
+  settings.screenFilter = SCREEN_FILTERS[(i + d + SCREEN_FILTERS.length) % SCREEN_FILTERS.length];
+  saveSettings();
+  filteredTextures.forEach(applyTexFilter);
+  toast('Screen filter: ' + settings.screenFilter);
+  menuDirty = true;
+}
+
+function setMode(m) {
+  const prev = mode;
+  mode = m;
+  settings.mode = m; saveSettings();
+  if (prev === 'pc' && m !== 'pc') pcSend({ t: 'park' }); // leaving PC mode: move the cursor out of the way
+  if (laser.down) { pcSend({ t: 'up', b: 0 }); laser.down = false; }
+  hintsDirty = true; menuDirty = true;
+  pad.lastActive = performance.now();
+  toast('Mode: ' + MODE_NAMES[m], MODE_COLORS[m]);
+}
+const cycleMode = (d) => setMode(MODES[(MODES.indexOf(mode) + d + MODES.length) % MODES.length]);
+
+const LASER_MODES = ['auto', 'on', 'off'];
+let laserMode = LASER_MODES.includes(settings.laserMode) ? settings.laserMode : 'auto';
+function cycleLaserMode() { laserMode = LASER_MODES[(LASER_MODES.indexOf(laserMode) + 1) % 3]; settings.laserMode = laserMode; saveSettings(); menuDirty = true; toast('Laser: ' + laserMode); }
+const HINT_MODES = ['auto', 'always', 'off'];
+let hintsMode = HINT_MODES.includes(settings.hintsMode) ? settings.hintsMode : 'auto';
+function cycleHintsMode() { hintsMode = HINT_MODES[(HINT_MODES.indexOf(hintsMode) + 1) % 3]; settings.hintsMode = hintsMode; saveSettings(); menuDirty = true; toast('Button hints: ' + hintsMode); }
+
+// ---------------------------------------------------------------------------
+// Toast: short message floating in front of the eyes
+// ---------------------------------------------------------------------------
+const toastCanvas = document.createElement('canvas');
+toastCanvas.width = 512; toastCanvas.height = 96;
+const toastTex = new THREE.CanvasTexture(toastCanvas);
+toastTex.colorSpace = THREE.SRGBColorSpace;
+const toastMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.06),
+  new THREE.MeshBasicMaterial({ map: toastTex, transparent: true, depthTest: false, toneMapped: false }));
+toastMesh.renderOrder = 1002;
+toastMesh.position.set(0, -0.14, -0.7);
+toastMesh.visible = false;
+camera.add(toastMesh);
+let toastT = 0;
+function toast(text, color) {
+  const c = toastCanvas.getContext('2d');
+  c.clearRect(0, 0, 512, 96);
+  c.fillStyle = 'rgba(12,14,20,0.85)';
+  c.beginPath(); if (c.roundRect) c.roundRect(2, 2, 508, 92, 20); else c.rect(2, 2, 508, 92); c.fill();
+  c.fillStyle = color || '#ffb347'; c.font = 'bold 36px system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(text, 256, 50);
+  toastTex.needsUpdate = true;
+  toastMesh.visible = true;
+  toastT = 1.6;
+}
+function updateToast(dt) {
+  if (toastT <= 0) return;
+  toastT -= dt;
+  toastMesh.material.opacity = Math.min(1, toastT * 2.5);
+  if (toastT <= 0) toastMesh.visible = false;
+}
+
+// ---------------------------------------------------------------------------
+// Gamepad polling
+// ---------------------------------------------------------------------------
+const pad = { L: { x: 0, y: 0 }, R: { x: 0, y: 0 }, btn: {}, alt: false, lastActive: 0 };
+const rep = {};
+// true on press, then every `rate` seconds while held (after `first`)
+function repeatFire(id, active, dt, first = 0.4, rate = 0.15) {
+  const r = rep[id] || (rep[id] = { t: 0, on: false });
+  if (!active) { r.on = false; return false; }
+  if (!r.on) { r.on = true; r.t = first; return true; }
+  r.t -= dt;
+  if (r.t <= 0) { r.t = rate; return true; }
+  return false;
+}
+function stepSlider(id, dir) {
+  const el = $(id);
+  const min = +el.min, max = +el.max, st = +el.step;
+  const step = Math.max(st, (max - min) / 40);
+  let v = THREE.MathUtils.clamp(parseFloat(el.value) + dir * step, min, max);
+  v = Math.round(v / st) * st;
+  el.value = v;
+  el.dispatchEvent(new Event('input')); // keeps the panel, the menu and the saved settings in sync
+}
+
+let navCd = 0, adjCd = 0, scrollAcc = 0, prevAlt = null;
+function updateXR(dt) {
+  const session = renderer.xr.getSession();
+  if (!session) return;
+  // Head pose in world space (the user camera is a child of the rig)
+  camera.getWorldPosition(_head);
+  camera.getWorldDirection(_dir);
+  _dir.y = 0;
+  if (_dir.lengthSq() < 1e-6) _dir.set(0, 0, -1);
+  _dir.normalize();
+  _side.set(-_dir.z, 0, _dir.x);
+  const before = dolly.position.clone();
+  if (recenterFrames > 0 && --recenterFrames === 0) resetView();
+
+  // xr-standard: axes 2/3 thumbstick; buttons 0 trigger, 1 grip, 3 stick click, 4 A/X, 5 B/Y
+  const L = pad.L, R = pad.R, btn = {};
+  L.x = L.y = R.x = R.y = 0;
+  for (const src of session.inputSources) {
+    const gp = src.gamepad;
+    if (!gp || !src.handedness) continue;
+    const st = src.handedness === 'left' ? L : R;
+    st.x = dz(gp.axes.length >= 4 ? gp.axes[2] : gp.axes[0] || 0);
+    st.y = dz(gp.axes.length >= 4 ? gp.axes[3] : gp.axes[1] || 0);
+    for (const i of [0, 1, 3, 4, 5]) btn[src.handedness + '_' + i] = !!(gp.buttons[i] && gp.buttons[i].pressed);
+  }
+  const edge = (k) => btn[k] && !prevBtn[k];
+  const released = (k) => !btn[k] && prevBtn[k];
+  // Two ALT layers: left grip held = ALT L, right grip held = ALT R
+  const alt = btn.left_1 ? 'L' : btn.right_1 ? 'R' : null;
+  pad.btn = btn; pad.alt = alt;
+  if (alt !== prevAlt) { hintsDirty = true; prevAlt = alt; }
+  if (Object.values(btn).some(Boolean) || L.x || L.y || R.x || R.y) pad.lastActive = performance.now();
+
+  // ---- global ----
+  if (edge('left_5')) toggleMenu();                            // Y: menu
+  if (edge('left_3')) nextSeat();                              // L3: next favorite seat (faces the screen)
+  if (edge('left_4')) cycleMode(alt === 'L' ? -1 : 1);         // X: next mode (ALT L + X: previous)
+  if (edge('right_3')) setSpill(spillU.uSpillOn.value < 0.5);  // R3: light spill on/off
+
+  // Right trigger on the menu or the exit sign wins over the mode
+  let triggerUsed = false;
+  if (edge('right_0')) {
+    if (laser.onMenu) { menuClick(laser.menuUv); triggerUsed = true; }
+    else if (laser.onExit) { exitVR(); triggerUsed = true; }
+  }
+  const linked = pcConn && pcConn.open;
+  const key = (k, mods) => pcSend({ t: 'key', k, mods: mods || [] });
+
+  if (menuMesh.visible) {
+    navCd -= dt; adjCd -= dt;
+    if (Math.abs(L.y) > 0.5) {
+      if (navCd <= 0) { menuSel = (menuSel + (L.y > 0 ? 1 : -1) + MENU.length) % MENU.length; navCd = 0.22; menuDirty = true; }
+    } else navCd = 0;
+    if (Math.abs(R.x) > 0.5) {
+      const it = MENU[menuSel];
+      if (adjCd <= 0 && it.adjust) { it.adjust(R.x > 0 ? 1 : -1); adjCd = 0.15; menuDirty = true; }
+    } else adjCd = 0;
+    if (edge('right_4') || edge('left_0')) menuConfirm();
+  } else if (mode === 'fly') {
+    if (alt === 'L') {
+      if (repeatFire('fSize', Math.abs(R.y) > 0.5, dt, 0.25, 0.12)) stepSlider('sSize', R.y < 0 ? 1 : -1);
+      if (repeatFire('fInt', Math.abs(R.x) > 0.5, dt, 0.25, 0.12)) stepSlider('sInt', R.x > 0 ? 1 : -1);
+      if (edge('right_4')) cycleLaserMode();
+      if (edge('right_5')) cycleHintsMode();
+    } else if (alt === 'R') {
+      if (repeatFire('fCurve', Math.abs(R.y) > 0.5, dt, 0.25, 0.12)) stepSlider('sCurve', R.y < 0 ? 1 : -1);
+      if (repeatFire('fAmb', Math.abs(R.x) > 0.5, dt, 0.25, 0.12)) stepSlider('sAmb', R.x > 0 ? 1 : -1);
+      if (edge('right_4')) nextDemoScene();
+      if (edge('right_5')) toggleFavoriteSeat();
+    } else {
+      // Slow cruise, hold the left trigger to boost (Google Earth VR style)
+      const speed = btn.left_0 ? MOVE_BOOST : MOVE_SPEED;
+      dolly.position.addScaledVector(_dir, -L.y * speed * dt).addScaledVector(_side, L.x * speed * dt);
+      dolly.position.y += -R.y * 1.5 * dt;
+      if (smoothTurn) {
+        if (R.x !== 0) snapTurn(-R.x * TURN_SPEED * dt, _head);
+      } else {
+        if (Math.abs(R.x) > 0.7 && snapReady) { snapTurn(R.x > 0 ? -SNAP : SNAP, _head); snapReady = false; }
+        else if (Math.abs(R.x) < 0.3) snapReady = true;
+      }
+      if (edge('right_4')) doAction('playPause');
+      if (edge('right_5')) doAction('back');
+    }
+  } else if (mode === 'media') {
+    // Every MEDIA button comes from the profile's mapping (Bridge "Button Mapping" tab), per ALT layer
+    const map = mediaLayer(alt);
+    if (edge('right_4')) runSlot(map['R.a']);
+    if (edge('right_5')) runSlot(map['R.b']);
+    if (edge('right_0') && !triggerUsed) runSlot(map['R.trigger']);
+    if (edge('left_0')) runSlot(map['L.trigger']);
+    for (const [h, S] of [['R', R], ['L', L]]) {
+      if (repeatFire('mx' + h + (alt || ''), Math.abs(S.x) > 0.6, dt, 0.5, 0.3)) runSlot(map[h + (S.x > 0 ? '.right' : '.left')]);
+      if (repeatFire('my' + h + (alt || ''), Math.abs(S.y) > 0.6, dt, 0.4, 0.15)) runSlot(map[h + (S.y < 0 ? '.up' : '.down')]);
+    }
+  } else if (mode === 'pc') {
+    if (alt === 'L') {
+      if (repeatFire('pcL', L.x < -0.6, dt)) key('ArrowLeft');
+      if (repeatFire('pcR', L.x > 0.6, dt)) key('ArrowRight');
+      if (repeatFire('pcU', L.y < -0.6, dt)) key('ArrowUp');
+      if (repeatFire('pcD', L.y > 0.6, dt)) key('ArrowDown');
+      if (edge('right_4')) key('Space');
+      if (edge('right_5')) key('Backspace');
+      if (repeatFire('pcVol', Math.abs(R.y) > 0.6, dt, 0.3, 0.15)) key(R.y < 0 ? 'VolumeUp' : 'VolumeDown');
+    } else if (alt === 'R') {
+      if (edge('right_4')) key('F11');
+      if (edge('right_5')) key('Tab');
+      if (edge('right_0') && !triggerUsed && linked && laser.onScreen) { const p = screenXY(); pcSend({ t: 'move', x: p.x, y: p.y }); pcSend({ t: 'click', b: 2 }); }
+    } else if (linked) {
+      scrollAcc += -(L.y + R.y) * dt * 8; // either stick up/down scrolls
+      while (Math.abs(scrollAcc) >= 1) { const sg = Math.sign(scrollAcc); pcSend({ t: 'wheel', d: sg * 120 }); scrollAcc -= sg; }
+      if (edge('right_4')) key('Enter');
+      if (edge('right_5')) key('Escape');
+      if (edge('left_0')) openPlayer();
+      // Right trigger = left mouse button (hold to drag)
+      if (edge('right_0') && !triggerUsed && laser.onScreen) { const p = screenXY(); pcSend({ t: 'move', x: p.x, y: p.y }); pcSend({ t: 'down', b: 0 }); laser.down = true; }
+    }
+    if (released('right_0') && laser.down) { pcSend({ t: 'up', b: 0 }); laser.down = false; }
+  }
+  Object.assign(prevBtn, btn);
+
+  // Keep the head inside the room
+  const headAfter = _head.clone().add(dolly.position).sub(before);
+  const clamped = headAfter.clone();
+  clampToRoom(clamped, 0.3);
+  dolly.position.add(clamped.sub(headAfter));
+}
+
+// Debug hook: preview the VR menu texture from the browser console
+window.lslDebug = { menuPreview: () => { drawMenu(); return menuCanvas.toDataURL(); } };
+// Label layout test hook (desktop): lslDebug.labelTest(model, hand)
+window.lslDebug.labelTest = (model, hand, dx = 0) => {
+  const g = new THREE.Group(); g.userData = { model, hand }; g.add(model); scene.add(g);
+  // Hold it 30 cm in front of the desktop camera, top face toward the eye
+  const cq = camera.getWorldQuaternion(new THREE.Quaternion());
+  g.quaternion.copy(cq).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
+  g.position.copy(camera.getWorldPosition(new THREE.Vector3())).add(new THREE.Vector3(dx, 0, -0.3).applyQuaternion(cq));
+  g.updateMatrixWorld(true);
+  tryBuildLabels(g); pad.lastActive = performance.now(); hintsDirty = true; updateHints(1);
+  return g;
+};
+// Mapping test hooks (desktop): feed Bridge profiles and pick one
+window.lslDebug.userProfiles = (list) => setUserProfiles(list);
+window.lslDebug.useProfile = (id) => { profileId = id; hintsDirty = true; };
+window.lslDebug.setMode = (m, alt) => { mode = m; pad.alt = alt || null; hintsDirty = true; updateHints(1); };
+
+function menuConfirm() {
+  const it = MENU[menuSel];
+  if (it.act) it.act(); else if (it.adjust) it.adjust(1);
+  menuDirty = true;
+}
+
+// ---------------------------------------------------------------------------
+// XR: seat the viewer, controllers
+// ---------------------------------------------------------------------------
+const savedCamPos = new THREE.Vector3();
+let savedFov = 60, recenterFrames = 0;
+renderer.xr.addEventListener('sessionstart', () => {
+  savedCamPos.copy(camera.position);
+  savedFov = camera.fov;
+  dolly.position.copy(seat.floor);
+  dolly.rotation.set(0, seat.yaw, 0);
+  if (source === 'stream' && streamVideo.paused) streamVideo.play().catch(() => {}); // the Enter VR tap unlocks audio
+  recenterFrames = 3; // once the headset pose is known, face the screen
+});
+renderer.xr.addEventListener('sessionend', () => {
+  closeMenu();
+  dolly.position.set(0, 0, 0);
+  dolly.rotation.set(0, 0, 0);
+  camera.position.copy(savedCamPos);
+  applyCamRot();
+  camera.fov = savedFov;
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+});
+// ---------------------------------------------------------------------------
+// Controllers: models, grips (menu + hint cards dock here), laser pointer
+// ---------------------------------------------------------------------------
+const controllerModelFactory = new XRControllerModelFactory();
+let leftGrip = null, rightGrip = null;
+
+// ---------------------------------------------------------------------------
+// Button labels: one small tag next to each physical button, lying on the controller's top face
+// (so they read like printed labels), colored by mode. Positions come from the controller model's
+// button nodes (WebXR input profiles), so they follow the real A / B / X / Y / stick / trigger / grip.
+// ---------------------------------------------------------------------------
+const MODE_COLORS = { fly: '#ff6b5e', media: '#5fdc7c', pc: '#5aa9ff' };
+const NEUTRAL = '#e4e7ef';
+const LABEL_W = 0.06, LABEL_H = 0.015, LABEL_PX_W = 512, LABEL_PX_H = 128;
+let hintsDirty = true, hintOpacity = 0;
+const labelSets = []; // one per controller once its model has loaded
+
+// Stick label from the 4 mapped directions: [line1, line2], the click hint fills a free line
+function stickText(h, map, clickHint) {
+  const t = (d) => slotText(map[h + '.' + d]);
+  const l = t('left'), r = t('right'), u = t('up'), d = t('down');
+  const x = l || r ? '\u25c0 ' + (l || '-') + '  \u25b6 ' + (r || '-') : '';
+  const y = u || d ? '\u25b2 ' + (u || '-') + '  \u25bc ' + (d || '-') : '';
+  return x ? [x, y || clickHint] : y ? [y, clickHint] : ['', clickHint];
+}
+
+// What each button does right now: { slot: [line1, line2?, color] }
+// Slots: left x, y, stick, trigger, grip / right a, b, stick, trigger, grip
+function buttonLabels(hand) {
+  const mc = MODE_COLORS[mode], a = (n, f) => actLabel(n, f), alt = pad.alt;
+  const G = (t, t2) => [t, t2 || '', NEUTRAL]; // global command (same in every mode)
+  const M = (t, t2) => [t, t2 || '', mc];      // mode command
+  const P = profile().name;
+  const grips = { L: G(alt === 'L' ? 'ALT L (held)' : 'Hold: ALT L'), R: G(alt === 'R' ? 'ALT R (held)' : 'Hold: ALT R') };
+  if (hand === 'left') {
+    const base = { x: G(alt === 'L' ? 'Prev mode' : 'Mode ▸'), y: G('Menu'), grip: grips.L };
+    const seat = 'Click: next seat';
+    if (mode === 'fly') return { ...base, stick: alt ? G(seat) : M('Walk', seat), trigger: alt ? G('') : M('Boost (hold)') };
+    if (mode === 'media') { const [s1, s2] = stickText('L', mediaLayer(alt), seat); const t = slotText(mediaLayer(alt)['L.trigger']); return { ...base, stick: s1 ? M(s1, s2) : G('', s2), trigger: t ? M(t) : G('') }; }
+    return { ...base, stick: alt === 'L' ? M('Arrow keys', seat) : alt ? G(seat) : M('▲▼ Scroll', seat), trigger: alt ? G('') : M('Open ' + appName()) };
+  }
+  const trig = 'Menu / Exit (laser)';
+  const R3 = 'Click: light on/off';
+  if (mode === 'fly') {
+    if (alt === 'L') return { a: M('Laser: ' + laserMode), b: M('Hints: ' + hintsMode), stick: M('▲▼ Screen size', '◀▶ Light intensity'), trigger: G(trig), grip: grips.R };
+    if (alt === 'R') return { a: M('Next demo'), b: M('Favorite seat'), stick: M('▲▼ Curvature', '◀▶ Ambient light'), trigger: G(trig), grip: grips.R };
+    return { a: M(a('playPause', 'Play/Pause')), b: M(a('back', 'Back')), stick: M('Turn / Up-Down', R3), trigger: G(trig), grip: grips.R };
+  }
+  if (mode === 'media') {
+    // Labels come straight from the mapping the Quest runs (Bridge "Button Mapping" tab)
+    const map = mediaLayer(alt), txt = (id) => slotText(map[id]);
+    const [s1, s2] = stickText('R', map, R3);
+    const t = txt('R.trigger');
+    return { a: txt('R.a') ? M(txt('R.a')) : G(''), b: txt('R.b') ? M(txt('R.b')) : G(''), stick: s1 ? M(s1, s2) : G('', s2), trigger: t ? M(t) : G(trig), grip: grips.R };
+  }
+  if (alt === 'L') return { a: M('Space'), b: M('Backspace'), stick: M('▲▼ Volume', R3), trigger: M('Click / drag'), grip: grips.R };
+  if (alt === 'R') return { a: M('F11 fullscreen'), b: M('Tab'), stick: G('', R3), trigger: M('Right click'), grip: grips.R };
+  return { a: M('Enter'), b: M('Esc'), stick: M('▲▼ Scroll', R3), trigger: M('Click / drag'), grip: grips.R };
+}
+
+function makeLabel(align) {
+  const canvas = document.createElement('canvas');
+  canvas.width = LABEL_PX_W; canvas.height = LABEL_PX_H;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, toneMapped: false, opacity: 0 });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(LABEL_W, LABEL_H), mat);
+  mesh.renderOrder = 998;
+  const lineMat = new THREE.LineBasicMaterial({ transparent: true, opacity: 0, depthTest: false });
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), lineMat);
+  line.renderOrder = 997;
+  return { canvas, tex, mesh, line, lineMat, align, text: null };
+}
+
+function drawLabel(L, spec) {
+  const [t1, t2, color] = spec || ['', '', NEUTRAL];
+  const key = t1 + '|' + t2 + '|' + color;
+  if (L.text === key) return;
+  L.text = key;
+  const c = L.canvas.getContext('2d');
+  c.clearRect(0, 0, LABEL_PX_W, LABEL_PX_H);
+  L.empty = !t1 && !t2;
+  if (L.empty) { L.tex.needsUpdate = true; return; }
+  // Long labels (custom mappings) shrink to fit instead of being cut
+  const MAXW = LABEL_PX_W - 44;
+  let f1 = 46, f2 = 32;
+  c.font = `bold ${f1}px system-ui, sans-serif`;
+  while (c.measureText(t1).width > MAXW && f1 > 24) { f1 -= 2; c.font = `bold ${f1}px system-ui, sans-serif`; }
+  const w1 = c.measureText(t1).width;
+  c.font = `${f2}px system-ui, sans-serif`;
+  while (t2 && c.measureText(t2).width > MAXW && f2 > 20) { f2 -= 2; c.font = `${f2}px system-ui, sans-serif`; }
+  const w2 = t2 ? c.measureText(t2).width : 0;
+  const w = Math.min(LABEL_PX_W - 8, Math.max(w1, w2) + 36);
+  const x0 = L.align === 'left' ? 4 : L.align === 'right' ? LABEL_PX_W - 4 - w : (LABEL_PX_W - w) / 2;
+  c.fillStyle = 'rgba(10,12,18,0.82)';
+  c.beginPath(); if (c.roundRect) c.roundRect(x0, 6, w, LABEL_PX_H - 12, 18); else c.rect(x0, 6, w, LABEL_PX_H - 12); c.fill();
+  c.fillStyle = color; c.fillRect(x0, 6, 8, LABEL_PX_H - 12); // color tab = mode
+  c.textBaseline = 'middle'; c.textAlign = 'left';
+  c.fillStyle = color; c.font = `bold ${f1}px system-ui, sans-serif`;
+  c.fillText(t1, x0 + 22, t2 ? 44 : LABEL_PX_H / 2);
+  if (t2) { c.fillStyle = '#aab0c0'; c.font = `${f2}px system-ui, sans-serif`; c.fillText(t2, x0 + 22, 92); }
+  L.lineMat.color.set(color);
+  L.tex.needsUpdate = true;
+}
+
+const SLOT_NODES = {
+  trigger: ['xr-standard-trigger'], grip: ['xr-standard-squeeze'], stick: ['xr-standard-thumbstick'],
+  a: ['a-button'], b: ['b-button'], x: ['x-button'], y: ['y-button'],
+};
+const _m4 = new THREE.Matrix4(), _inv = new THREE.Matrix4();
+
+// Build the labels for one controller once its model (and button nodes) exist
+function tryBuildLabels(grip) {
+  const model = grip.userData.model, hand = grip.userData.hand;
+  if (!model || !hand || grip.userData.labels || !model.motionController || !model.children.length) return;
+  const mc = model.motionController;
+  // The Quest 3 model does not contain the input-profile root node names for trigger / grip / stick
+  // (only A B X Y match), so look for the real part names too.
+  const NODE_ALIASES = {
+    'xr-standard-trigger': ['trigger', 'xr_standard_trigger_pressed_value'],
+    'xr-standard-squeeze': ['squeeze', 'xr_standard_squeeze_pressed_value'],
+    'xr-standard-thumbstick': ['xr_standard_thumbstick_pressed_value', 'thumbstick'],
+  };
+  const nodeFor = (ids) => {
+    for (const id of ids) {
+      const comp = mc.components[id];
+      const names = [];
+      if (comp && comp.rootNodeName) names.push(comp.rootNodeName);
+      names.push(id.replace(/-/g, '_'), ...(NODE_ALIASES[id] || []));
+      if (comp && comp.visualResponses) for (const vr of Object.values(comp.visualResponses)) if (vr.valueNodeName) names.push(vr.valueNodeName);
+      for (const name of names) { const nd = model.getObjectByName(name); if (nd) return nd; }
+    }
+    return null;
+  };
+  grip.updateMatrixWorld(true);
+  _inv.copy(grip.matrixWorld).invert();
+  const local = (node) => {
+    const box = new THREE.Box3().setFromObject(node);
+    if (box.isEmpty()) { _m4.multiplyMatrices(_inv, node.matrixWorld); return new THREE.Vector3().setFromMatrixPosition(_m4); }
+    return box.getCenter(new THREE.Vector3()).applyMatrix4(_inv);
+  };
+  // Labels lie flat, facing up in grip space (confirmed readable in v0.10.0), text "up" toward the tip
+  const faceNode = nodeFor(hand === 'right' ? ['a-button'] : ['x-button']);
+  const n = new THREE.Vector3(0, 1, 0);
+  const u = new THREE.Vector3(0, 0, -1);
+  const r = new THREE.Vector3().crossVectors(u, n).normalize();
+  const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(r, u, n));
+  const flat = (v) => v.projectOnPlane(n).normalize();
+  const group = new THREE.Group();
+  const labels = {};
+  // dir: direction in the face plane where the label goes; dU: extra shift toward the tip
+  const place = (slot, anchor, dir, dU, align) => {
+    const L = makeLabel(align);
+    const center = anchor.clone().addScaledVector(n, 0.012).addScaledVector(u, dU);
+    if (align !== 'center') center.addScaledVector(dir, 0.014 + LABEL_W / 2);
+    L.mesh.position.copy(center);
+    L.mesh.quaternion.copy(q);
+    const edge = align === 'center' ? center.clone().addScaledVector(u, -Math.sign(dU || 1) * LABEL_H / 2)
+      : center.clone().addScaledVector(dir, -LABEL_W / 2);
+    L.line.geometry.setFromPoints([anchor.clone().addScaledVector(n, 0.004), edge]);
+    group.add(L.mesh, L.line);
+    labels[slot] = L;
+  };
+  const nodes = {};
+  const slots = hand === 'right' ? ['a', 'b', 'stick', 'trigger', 'grip'] : ['x', 'y', 'stick', 'trigger', 'grip'];
+  for (const slot of slots) { const nd = nodeFor(SLOT_NODES[slot]); if (nd) nodes[slot] = local(nd); }
+  const btn1 = nodes.a || nodes.x, stick = nodes.stick;
+  // Layout: face buttons outward (away from the other hand), stick inward + up, grip inward + down,
+  // trigger above the tip. Keeps every tag apart and next to its button.
+  const outDir = r.clone().multiplyScalar(hand === 'right' ? 1 : -1);
+  const inDir = outDir.clone().negate();
+  const alignFor = (dir) => (dir.dot(r) >= 0 ? 'left' : 'right');
+  for (const slot of slots) {
+    const p = nodes[slot];
+    if (!p) continue;
+    if (slot === 'a' || slot === 'x') place(slot, p, outDir, -0.012, alignFor(outDir));
+    else if (slot === 'b' || slot === 'y') place(slot, p, outDir, 0.012, alignFor(outDir));
+    else if (slot === 'stick') place(slot, p, inDir, 0.03, alignFor(inDir));
+    else if (slot === 'trigger') place(slot, p, u, 0.075, 'center');
+    else if (slot === 'grip') place(slot, p, inDir, -0.035, alignFor(inDir));
+  }
+  // Mode title above the left controller
+  if (hand === 'left') {
+    const top = faceNode ? local(faceNode) : new THREE.Vector3();
+    const T = makeLabel('center');
+    T.mesh.position.copy(top).addScaledVector(u, 0.085).addScaledVector(n, 0.03);
+    T.mesh.quaternion.copy(q);
+    T.mesh.scale.setScalar(1.3);
+    group.add(T.mesh);
+    labels.title = T;
+  }
+  grip.add(group);
+  grip.userData.labels = labels;
+  grip.userData.labelGroup = group;
+  grip.userData.labelsHand = hand;
+  // Light the controller: it takes the screen light like the room (spill), a very faint base glow,
+  // and a soft light that fades in while you look at it (updateHints)
+  const mats = [];
+  model.traverse((o) => {
+    if (!o.isMesh || !o.material) return;
+    const src = o.material;
+    const m = new THREE.MeshStandardMaterial({
+      map: src.map || null, color: src.color ? src.color.clone() : new THREE.Color(0xffffff),
+      roughness: src.roughness !== undefined ? src.roughness : 0.6, metalness: 0,
+      emissive: new THREE.Color(0x1c1c1c), emissiveMap: src.map || null,
+    });
+    o.material = patchMaterial(m, 0.4, 24);
+    mats.push(o.material);
+  });
+  grip.userData.mats = mats;
+  grip.userData.gaze = 0;
+  labelSets.push({ grip, hand, labels });
+  hintsDirty = true;
+}
+
+function resetLabels(grip) {
+  if (grip.userData.labelGroup) grip.remove(grip.userData.labelGroup);
+  grip.userData.labels = grip.userData.labelGroup = grip.userData.labelsHand = null;
+  grip.userData.mats = null;
+  const i = labelSets.findIndex((x) => x.grip === grip);
+  if (i >= 0) labelSets.splice(i, 1);
+}
+const _gHead = new THREE.Vector3(), _gDir = new THREE.Vector3(), _gPos = new THREE.Vector3();
+function updateHints(dt) {
+  for (const g of [leftGrip, rightGrip]) if (g) tryBuildLabels(g);
+  if (hintsDirty) {
+    for (const set of labelSets) {
+      const spec = buttonLabels(set.hand);
+      for (const [slot, L] of Object.entries(set.labels)) {
+        if (slot === 'title') drawLabel(L, [MODE_NAMES[mode] + (pad.alt ? ' + ALT ' + pad.alt : ''), profile().name, MODE_COLORS[mode]]);
+        else drawLabel(L, spec[slot]);
+      }
+    }
+    hintsDirty = false;
+  }
+  // Gaze light: looking at a controller lights it softly and shows its labels
+  camera.getWorldPosition(_gHead);
+  camera.getWorldDirection(_gDir);
+  for (const set of labelSets) {
+    set.grip.getWorldPosition(_gPos);
+    const to = _gPos.sub(_gHead);
+    const dist = to.length();
+    const looking = dist < 1.2 && to.normalize().dot(_gDir) > Math.cos(0.45);
+    if (looking) pad.lastActive = performance.now();
+    const g = set.grip.userData.gaze += ((looking ? 1 : 0) - set.grip.userData.gaze) * Math.min(1, dt * 5);
+    for (const m of set.grip.userData.mats || []) m.emissiveIntensity = 1 + g * 4;
+  }
+  const recent = performance.now() - pad.lastActive < 4000;
+  const want = hintsMode === 'off' ? 0 : (hintsMode === 'always' || pad.alt || recent) ? 1 : 0;
+  hintOpacity += (want - hintOpacity) * Math.min(1, dt * 6);
+  for (const set of labelSets) {
+    for (const L of Object.values(set.labels)) {
+      L.mesh.material.opacity = hintOpacity;
+      L.lineMat.opacity = hintOpacity * 0.8;
+      L.mesh.visible = L.line.visible = hintOpacity > 0.02 && !L.empty;
+    }
+  }
+}
+
+for (let i = 0; i < 2; i++) {
+  const grip = renderer.xr.getControllerGrip(i);
+  const model = controllerModelFactory.createControllerModel(grip);
+  grip.add(model);
+  grip.userData.model = model;
+  grip.addEventListener('connected', (e) => {
+    const hand = e.data && e.data.handedness;
+    if (grip.userData.labelsHand && grip.userData.labelsHand !== hand) resetLabels(grip); // slots can swap hands
+    grip.userData.hand = hand;
+    if (hand === 'left') leftGrip = grip;
+    else if (hand === 'right') rightGrip = grip;
+  });
+  grip.addEventListener('disconnected', () => {
+    resetLabels(grip); // the model is rebuilt on reconnect, and the slot may come back as the other hand
+    if (leftGrip === grip) leftGrip = null;
+    if (rightGrip === grip) rightGrip = null;
+  });
+  dolly.add(grip);
+}
+
+
+// ---------------------------------------------------------------------------
+// Laser pointer (right hand). PC mode: moves the PC mouse. Any mode: menu + exit sign.
+// Auto mode shows it while the hand moves and fades it out when you hold still.
+// ---------------------------------------------------------------------------
+const raycaster = new THREE.Raycaster();
+const laser = {
+  ctrl: null, onScreen: false, onMenu: false, onExit: false, down: false,
+  uv: new THREE.Vector2(), menuUv: new THREE.Vector2(), sendT: 0, lastX: -1, lastY: -1,
+  lastMove: 0, prevPos: new THREE.Vector3(), prevDir: new THREE.Vector3(), opacity: 0,
+};
+const dot = new THREE.Mesh(
+  new THREE.SphereGeometry(1, 12, 8),
+  new THREE.MeshBasicMaterial({ color: 0xffb347, depthTest: false, toneMapped: false, transparent: true })
+);
+dot.renderOrder = 1000;
+dot.visible = false;
+scene.add(dot);
+const laserMat = new THREE.LineBasicMaterial({ color: 0xffb347, transparent: true, opacity: 0 });
+const _o = new THREE.Vector3(), _d = new THREE.Vector3();
+
+function menuRowAt(uv) {
+  const row = Math.floor(((1 - uv.y) * MENU_H - MENU_Y0) / MENU_RH);
+  return row >= 0 && row < MENU.length ? row : -1;
+}
+function menuClick(uv) {
+  const row = menuRowAt(uv);
+  if (row < 0) return;
+  menuSel = row;
+  const it = MENU[row];
+  if (it.act) it.act(); else if (it.adjust) it.adjust(uv.x > 0.5 ? 1 : -1); // right half = +, left half = -
+  menuDirty = true;
+}
+const screenXY = () => ({ x: +laser.uv.x.toFixed(4), y: +(1 - laser.uv.y).toFixed(4) });
+
+function exitVR() {
+  const s = renderer.xr.getSession();
+  if (s) s.end();
+}
+
+function updateLaser(dt) {
+  const c = laser.ctrl;
+  if (!c) { dot.visible = false; return; }
+  c.updateMatrixWorld();
+  _o.setFromMatrixPosition(c.matrixWorld);
+  _d.set(0, 0, -1).transformDirection(c.matrixWorld);
+  const now = performance.now();
+  if (_o.distanceTo(laser.prevPos) > 0.004 || _d.angleTo(laser.prevDir) > 0.012) laser.lastMove = now;
+  laser.prevPos.copy(_o); laser.prevDir.copy(_d);
+
+  raycaster.set(_o, _d);
+  let len = 4;
+  laser.onScreen = laser.onMenu = laser.onExit = false;
+  if (menuMesh.visible) {
+    const h = raycaster.intersectObject(menuMesh, false)[0];
+    if (h && h.uv) {
+      laser.onMenu = true; laser.menuUv.copy(h.uv); len = h.distance;
+      const row = menuRowAt(h.uv);
+      if (row >= 0 && row !== menuSel) { menuSel = row; menuDirty = true; }
+    }
+  }
+  if (!laser.onMenu && exitTargets.length) {
+    const h = raycaster.intersectObjects(exitTargets, false)[0];
+    if (h) { laser.onExit = true; len = h.distance; }
+  }
+  if (!laser.onMenu && !laser.onExit) {
+    const h = raycaster.intersectObject(screenMesh, false)[0];
+    if (h && h.uv) {
+      laser.uv.copy(h.uv); len = h.distance;
+      laser.onScreen = true;
+      dot.position.copy(h.point);
+      dot.scale.setScalar(Math.max(0.006, h.distance * 0.005));
+    }
+  }
+  for (const t of exitTargets) if (t.userData.setHover) t.userData.setHover(laser.onExit);
+
+  // Auto: hidden in FLY / MEDIA. Shows in PC mode, with the menu open, or when you aim at the EXIT sign.
+  const moving = now - laser.lastMove < 1500;
+  let target;
+  if (laserMode === 'off') target = 0;
+  else if (laserMode === 'on' || laser.onMenu || laser.onExit) target = 0.8;
+  else if (mode === 'pc' || menuMesh.visible) target = moving ? 0.8 : 0.25;
+  else target = 0;
+  laser.opacity += (target - laser.opacity) * Math.min(1, dt * 6);
+  laserMat.opacity = laser.opacity;
+  if (c.userData.line) { c.userData.line.visible = laser.opacity > 0.02; c.userData.line.scale.z = len; }
+  const pcPointer = mode === 'pc' && laser.onScreen;
+  dot.visible = pcPointer; // the dot stays even with the laser off, it is the mouse cursor
+  dot.material.opacity = Math.max(0.35, laser.opacity);
+
+  // Stream the pointer to the PC (~30 Hz, only in PC mode, only when it moves)
+  laser.sendT += dt;
+  if (pcPointer && pcConn && pcConn.open && laser.sendT >= 0.033) {
+    const p = screenXY();
+    if (p.x !== laser.lastX || p.y !== laser.lastY) { pcSend({ t: 'move', x: p.x, y: p.y }); laser.lastX = p.x; laser.lastY = p.y; }
+    laser.sendT = 0;
+  }
+}
+
+for (let i = 0; i < 2; i++) {
+  const c = renderer.xr.getController(i);
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]), laserMat);
+  line.visible = false;
+  c.add(line);
+  c.addEventListener('connected', (e) => {
+    if (e.data && e.data.handedness === 'right') { laser.ctrl = c; c.userData.line = line; }
+  });
+  c.addEventListener('disconnected', () => { line.visible = false; if (laser.ctrl === c) laser.ctrl = null; });
+  // Buttons are polled in updateXR. A select event is a user gesture, so use it to unlock audio.
+  c.addEventListener('selectstart', () => { if (source === 'stream' && streamVideo.paused) streamVideo.play().catch(() => {}); });
+  dolly.add(c);
+}
+
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  layoutHud();
+});
+
+// ---------------------------------------------------------------------------
+// Main loop
+// ---------------------------------------------------------------------------
+if (settings.renderScale) renderer.xr.setFramebufferScaleFactor(settings.renderScale);
+buildDefaultRoom();
+setStatus('Default room');
+loadRepoKit();
+
+let last = performance.now();
+let fps = 0, fpsFrames = 0, fpsTime = 0;
+renderer.setAnimationLoop(() => {
+  const now = performance.now();
+  const dt = Math.min((now - last) / 1000, 0.1);
+  last = now;
+  fpsFrames++; fpsTime += dt;
+  if (fpsTime >= 0.5) { fps = Math.round(fpsFrames / fpsTime); fpsFrames = 0; fpsTime = 0; $('fps').textContent = fps + ' fps'; }
+
+  if (source === 'demo') {
+    if (!demoPaused) demoTime += dt;
+    const si = drawDemo(demoTime);
+    demoTex.needsUpdate = true;
+    if (si !== lastSceneIdx) { lastSceneIdx = si; $('srcName').textContent = 'Demo reel: ' + SCENES[si]; }
+  }
+
+  computeSpill(dt);
+
+  if (renderer.xr.isPresenting) { updateXR(dt); updateLaser(dt); updateMenu(dt); updateHints(dt); } else { updateDesktop(dt); dot.visible = false; }
+  updateToast(dt);
+  renderer.autoClear = true;
+  renderer.render(scene, camera);
+
+  if (showDebug && !uiHidden && !renderer.xr.isPresenting) {
+    renderer.autoClear = false;
+    renderer.clearDepth();
+    renderer.render(hudScene, hudCam);
+    renderer.autoClear = true;
+  }
+});
+</script>
+</body>
+</html>

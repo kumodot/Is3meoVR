@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is3meo Stream Sender v0.5.0</title>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<style>
+  :root { --bg: #0b0c10; --card: #151821; --line: #262b36; --fg: #e4e7ef; --dim: #8b91a3; --acc: #ffb347; --ok: #7fd48a; --media: #5fdc7c; --bad: #ff7a6b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, sans-serif; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  h1 { margin: 0; font-size: 26px; } h1 span { color: var(--acc); }
+  .ver { font-family: ui-monospace, monospace; color: var(--dim); }
+  p { color: var(--dim); line-height: 1.5; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 16px; }
+  label { display: block; color: var(--dim); font-size: 13px; margin-bottom: 6px; }
+  input, select { background: #0f1117; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 18px; }
+  #code { width: 230px; font-family: ui-monospace, monospace; letter-spacing: 4px; text-align: center; font-size: 26px; }
+  .row { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+  button { background: var(--acc); color: #1a1004; border: 0; border-radius: 10px; padding: 12px 20px; font-size: 16px; font-weight: 700; cursor: pointer; }
+  button.ghost { background: none; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: 0.4; cursor: default; }
+  #btnShare.pulse { animation: pulse 1s infinite alternate; }
+  @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(255,179,71,0.6); } to { box-shadow: 0 0 0 10px rgba(255,179,71,0); } }
+  #status { margin-top: 12px; font-family: ui-monospace, monospace; font-size: 14px; color: var(--dim); }
+  #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+  #badge { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--dim); margin-left: 8px; }
+  #badge.on { color: var(--ok); border-color: #2f5a36; }
+  video { width: 100%; border-radius: 10px; background: #000; margin-top: 14px; display: none; }
+  ul { color: var(--dim); line-height: 1.6; padding-left: 20px; }
+  footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--dim); font-size: 14px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  a { color: var(--acc); }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.65); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .modal.hidden { display: none; }
+  .modal .card { max-width: 360px; text-align: center; }
+  .tabs { display: flex; gap: 6px; margin-top: 18px; }
+  .tabs button { background: none; color: var(--dim); border: 1px solid var(--line); font-weight: 600; padding: 8px 18px; }
+  .tabs button.on { background: var(--card); color: var(--acc); border-color: var(--acc); }
+  .hidden { display: none !important; }
+  .set input, .set select { font-size: 15px; padding: 8px 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .grid input, .grid select { width: 100%; }
+  .app { border: 1px solid var(--line); border-radius: 10px; padding: 12px; margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .app .full { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .app .full input { flex: 1; min-width: 0; font-family: ui-monospace, monospace; font-size: 13px; }
+  .app input, .app select { width: 100%; }
+  .app .found { font-size: 12px; color: var(--dim); grid-column: 1 / -1; font-family: ui-monospace, monospace; word-break: break-all; }
+  .app .found.ok { color: var(--ok); } .app .found.bad { color: var(--bad); }
+  .small { padding: 8px 12px; font-size: 14px; }
+  #setMsg { margin-left: 10px; font-size: 14px; }
+  @media (max-width: 560px) { .app { grid-template-columns: 1fr; } }
+  .seg { display: flex; gap: 0; flex-wrap: wrap; }
+  .seg button { background: none; color: var(--dim); border: 1px solid var(--line); border-radius: 0; font-weight: 600; padding: 9px 14px; font-size: 14px; }
+  .seg button:first-child { border-radius: 8px 0 0 8px; } .seg button:last-child { border-radius: 0 8px 8px 0; }
+  .seg button.on { color: #0b0c10; background: var(--media); border-color: var(--media); }
+  #mSvg { width: 100%; height: auto; display: block; margin-top: 14px; background: #0f1117; border: 1px solid var(--line); border-radius: 12px; }
+  #mSvg .hs { cursor: pointer; }
+  #mSvg .hs.hot > * { stroke: var(--acc) !important; stroke-width: 3; }
+  .mInfo { margin-top: 10px; font-size: 13px; color: var(--dim); line-height: 1.5; }
+  .mInfo b { color: var(--fg); }
+  .mCols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+  .mCols h4 { margin: 0 0 8px; font-size: 14px; color: var(--dim); font-weight: 600; }
+  .mRow { display: grid; grid-template-columns: 70px 92px 1fr; gap: 6px; align-items: center; padding: 6px; border-radius: 8px; border: 1px solid transparent; }
+  .mRow.hot { border-color: var(--acc); background: #1a1d27; }
+  .mRow .mName { font-weight: 700; font-size: 13px; }
+  .mRow input, .mRow select { font-size: 13px; padding: 6px 8px; width: 100%; min-width: 0; }
+  .mRow .mKeys { grid-column: 2 / -1; display: grid; grid-template-columns: 1fr 110px; gap: 6px; }
+  .mRow .mKey { font-family: ui-monospace, monospace; cursor: pointer; }
+  .mRow .mKey.cap { border-color: var(--acc); color: var(--acc); }
+  .mRow.locked { opacity: 0.5; grid-template-columns: 70px 1fr; }
+  .mRow.locked span:last-child { font-size: 13px; color: var(--dim); }
+  #mMsg { margin-left: 10px; font-size: 14px; }
+  textarea { width: 100%; background: #0f1117; color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-family: ui-monospace, monospace; font-size: 12px; }
+  @media (max-width: 700px) { .mCols { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Is3meo <span>// Stream Sender</span></h1>
+    <div class="ver" id="ver"></div>
+  </header>
+  <p>The PC waits here with a fixed code. The cinema on the Quest connects to it, then this page shares the screen back over WebRTC. Run it inside the <b>Is3meo Bridge</b> to start sharing automatically and to get remote mouse and keyboard from the Quest.</p>
+
+  <div class="tabs" id="tabs">
+    <button class="on" data-tab="tabStream">Stream</button>
+    <button data-tab="tabSettings" id="tabSettingsBtn">Settings</button>
+    <button data-tab="tabMapping" id="tabMappingBtn">Button Mapping</button>
+  </div>
+
+  <div id="tabStream">
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="code">PC code (type it once on the Quest)</label>
+        <input id="code" maxlength="16" autocapitalize="off">
+      </div>
+      <div>
+        <label for="bitrate">Max bitrate</label>
+        <select id="bitrate">
+          <option value="8000000">8 Mbps</option>
+          <option value="15000000" selected>15 Mbps</option>
+          <option value="25000000">25 Mbps</option>
+        </select>
+      </div>
+      <div>
+        <label for="fpsSel">Frame rate</label>
+        <select id="fpsSel">
+          <option value="30">30 fps</option>
+          <option value="60" selected>60 fps</option>
+        </select>
+      </div>
+      <button id="btnShare">Share</button>
+      <button id="btnStop" class="ghost" disabled>Stop</button>
+    </div>
+    <div id="status">Starting...</div>
+    <div style="margin-top:8px;color:var(--dim);font-size:13px">Remote control <span id="badge">off (no Bridge)</span></div>
+    <video id="preview" muted playsinline></video>
+  </div>
+
+  <div class="card">
+    <b>How to</b>
+    <ul>
+      <li><b>With the Bridge (recommended):</b> run <code>run_bridge.bat</code> on the PC once. It opens this page, waits for the Quest, shares the screen and injects the Quest's mouse and keys.</li>
+      <li><b>Without the Bridge:</b> keep this page open. When the Quest connects, click <b>Share</b> and pick what to send. Video only.</li>
+      <li>On the Quest (Light Spill Lab v0.7.0+): type this code, press <b>Connect</b>, keep <b>Auto</b> on. Next time it connects by itself.</li>
+      <li>Audio: a <b>browser tab</b> share includes its audio. For the whole screen, tick <b>Share system audio</b>, or pick a recording device in the Bridge <b>Settings</b> tab (e.g. VoiceMeeter).</li>
+      <li>Apps: add your players in <b>Settings</b> (Bridge only). The Quest asks the Bridge for this list, so you pick which one to open from the headset.</li>
+    </ul>
+  </div>
+  </div>
+
+  <div id="tabSettings" class="hidden set">
+    <div class="card" id="noBridge">
+      Settings are saved by the <b>Is3meo Bridge</b>. Open this page with <code>run_bridge.bat</code> to edit them.
+    </div>
+    <div id="setBody" class="hidden">
+      <div class="card">
+        <b>Stream</b>
+        <div class="grid" style="margin-top:12px">
+          <div><label for="sCode">PC code (8+ letters / digits)</label><input id="sCode" maxlength="16"></div>
+          <div><label for="sBitrate">Max bitrate</label>
+            <select id="sBitrate"><option value="8000000">8 Mbps</option><option value="15000000">15 Mbps</option><option value="25000000">25 Mbps</option><option value="40000000">40 Mbps</option></select></div>
+          <div><label for="sAudio">Audio</label><select id="sAudio"></select></div>
+          <div><label for="sScreen">Captured screen (restart the Bridge to apply)</label>
+            <select id="sScreen"><option>Screen 1</option><option>Screen 2</option><option>Screen 3</option><option>Screen 4</option></select></div>
+          <div><label for="sAuto">Open when the Quest connects</label><select id="sAuto"></select></div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+          <b>Apps the Quest can open</b>
+          <button class="ghost small" id="btnAddApp">+ Add app</button>
+        </div>
+        <p style="margin:6px 0 0;font-size:13px">Empty exe = auto detect (Stremio, PotPlayer, VLC). The profile sets the Quest buttons for that app.</p>
+        <div id="appList"></div>
+      </div>
+      <div style="margin-top:16px"><button id="btnSave">Save</button><span id="setMsg"></span></div>
+    </div>
+  </div>
+
+  <div id="tabMapping" class="hidden set">
+    <div class="card" id="mapNoBridge">
+      Button mappings are saved by the <b>Is3meo Bridge</b>. Open this page with <code>run_bridge.bat</code> to edit them.
+    </div>
+    <div id="mapBody" class="hidden">
+      <div class="card">
+        <div class="row">
+          <div><label for="mApp">App</label><select id="mApp"></select></div>
+          <div><label>Layer (what the buttons do while a grip is held)</label>
+            <div class="seg" id="mLayer">
+              <button data-l="base" class="on">Normal</button>
+              <button data-l="altL">ALT L (hold left grip)</button>
+              <button data-l="altR">ALT R (hold right grip)</button>
+            </div></div>
+        </div>
+        <div class="mInfo" id="mInfo"></div>
+        <svg id="mSvg" viewBox="0 0 820 400" role="img" aria-label="Quest controllers with the button labels"></svg>
+        <div class="mCols">
+          <div><h4>Left controller</h4><div id="mListL"></div></div>
+          <div><h4>Right controller</h4><div id="mListR"></div></div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button id="mSave">Save mapping</button>
+          <button class="ghost small" id="mReset">Reset to default</button>
+          <button class="ghost small" id="mJson">Share / JSON</button>
+          <span id="mMsg"></span>
+        </div>
+      </div>
+      <div class="card">
+        <b>How it works</b>
+        <ul>
+          <li>These are the buttons of the <b style="color:var(--media)">MEDIA</b> mode (green) while this app is picked on the Quest. PC mode stays mouse + keyboard.</li>
+          <li>Click a key box and press the shortcut, modifiers included (e.g. Ctrl + &rarr;). Keys the browser keeps for itself (like F11) are in the list next to it.</li>
+          <li>The label is what shows next to that button in VR. Keep it short.</li>
+          <li>Grey buttons are global (mode, menu, ALT, seat, light) and can't be changed, so you never lock yourself out.</li>
+          <li>Mappings are files in <code>bridge/profiles_user/</code>. Share them with <b>Share / JSON</b>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div>Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
+    <div><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a> &nbsp; <button class="ghost" id="btnAbout" style="padding:6px 12px;font-size:14px">About</button></div>
+  </footer>
+</div>
+
+<div id="jsonModal" class="modal hidden">
+  <div class="card" style="max-width:680px;width:100%;text-align:left">
+    <b>Profile JSON</b>
+    <p style="margin:6px 0 10px">Copy it to share this mapping, or paste one and press Load (then Save).</p>
+    <textarea id="mJsonText" rows="16" spellcheck="false"></textarea>
+    <div class="row" style="margin-top:10px"><button id="mJsonLoad">Load</button><button class="ghost" id="mJsonCopy">Copy</button><button class="ghost" id="mJsonClose">Close</button></div>
+  </div>
+</div>
+
+<div id="about" class="modal hidden">
+  <div class="card">
+    <h2 style="margin-top:0">Is3meo Stream Sender</h2>
+    <div class="ver" id="aboutVer"></div>
+    <p>Shares the PC screen with the Is3meoVR cinema over WebRTC (PeerJS signaling). Remote input goes through the Is3meo Bridge.</p>
+    <p style="color:var(--fg)">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</p>
+    <p><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener">Support Marcelo Souza</a></p>
+    <button class="ghost" id="btnClose">Close</button>
+  </div>
+</div>
+
+<script>
+const APP_VERSION = '0.5.0';
+const audioDevice = new URLSearchParams(location.search).get('audioDevice') || '';
+const $ = (id) => document.getElementById(id);
+$('ver').textContent = 'v' + APP_VERSION;
+$('aboutVer').textContent = 'v' + APP_VERSION;
+$('btnAbout').onclick = () => $('about').classList.remove('hidden');
+$('btnClose').onclick = () => $('about').classList.add('hidden');
+
+const qs = new URLSearchParams(location.search);
+const hasBridge = typeof window.is3meoInput === 'function';
+const log = (m) => { if (typeof window.is3meoLog === 'function') window.is3meoLog(String(m)); };
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function status(msg, cls = '') { const el = $('status'); el.textContent = msg; el.className = cls; log(msg); }
+
+if (qs.get('bitrate')) $('bitrate').value = qs.get('bitrate');
+$('badge').textContent = hasBridge ? 'on (Bridge)' : 'off (no Bridge)';
+$('badge').className = hasBridge ? 'on' : '';
+
+const randomCode = () => Array.from(crypto.getRandomValues(new Uint8Array(8)), (b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
+let code = qs.get('code') || lsGet('is3meo.pcCode', '') || randomCode();
+$('code').value = code;
+let peer = null, questConn = null, call = null, stream = null;
+
+function startPeer() {
+  if (peer) peer.destroy();
+  code = $('code').value.trim();
+  if (!/^[A-Za-z0-9]{4,16}$/.test(code)) { status('The code must be 4 to 16 letters / digits (8+ recommended)', 'bad'); return; }
+  lsSet('is3meo.pcCode', code);
+  status('Registering PC ' + code + '...');
+  peer = new Peer('is3meo-pc-' + code);
+  peer.on('open', () => status('Waiting for the Quest - code ' + code, 'ok'));
+  peer.on('error', (e) => {
+    if (e.type === 'unavailable-id') status('Code ' + code + ' is already in use (another sender or Bridge open?)', 'bad');
+    else status('Error: ' + e.type, 'bad');
+  });
+  peer.on('disconnected', () => { status('Signaling lost, reconnecting...'); setTimeout(() => { if (peer && !peer.destroyed) peer.reconnect(); }, 2000); });
+  peer.on('connection', (c) => {
+    questConn = c;
+    c.on('open', () => {
+      c.send({ t: 'info', bridge: hasBridge, v: APP_VERSION, apps: canSettings });
+      sendProfiles(c); // profiles first, so the app list can switch to them
+      sendApps(c);
+      status('Quest connected' + (hasBridge ? '' : ' - click Share'), 'ok');
+      ensureStream();
+    });
+    c.on('data', onData);
+    c.on('close', () => { if (questConn === c) { questConn = null; status('Quest left - waiting - code ' + code); } });
+  });
+}
+
+function onData(m) {
+  if (!m || typeof m !== 'object') return;
+  if (m.t === 'hello') { ensureStream(); return; }
+  if (m.t === 'cmd' && m.c === 'listApps') { if (questConn) { sendProfiles(questConn); sendApps(questConn); } return; }
+  if (hasBridge) window.is3meoInput(m);
+}
+
+function ensureStream() {
+  if (stream && stream.active) { callQuest(); return; }
+  if (typeof window.is3meoRequestShare === 'function') window.is3meoRequestShare(); // Bridge clicks Share for us
+  else $('btnShare').classList.add('pulse');
+}
+
+// Push bitrate / framerate limits into the video sender (WebRTC defaults are conservative)
+async function tuneSender(pc) {
+  const maxBitrate = +$('bitrate').value, maxFramerate = +$('fpsSel').value;
+  for (const s of pc.getSenders()) {
+    if (!s.track || s.track.kind !== 'video') continue;
+    const p = s.getParameters();
+    if (!p.encodings || !p.encodings.length) p.encodings = [{}];
+    p.encodings[0].maxBitrate = maxBitrate;
+    p.encodings[0].maxFramerate = maxFramerate;
+    p.degradationPreference = 'maintain-resolution';
+    try { await s.setParameters(p); } catch (e) { /* not ready yet, retried on connect */ }
+  }
+}
+
+// Opus defaults to mono ~32 kbps; ask for stereo at a movie-friendly bitrate
+function stereoSdp(sdp) {
+  return sdp.replace(/a=fmtp:(\d+) (.*useinbandfec=1.*)/g, (m, pt, params) =>
+    params.includes('stereo=1') ? m : `a=fmtp:${pt} ${params};stereo=1;sprop-stereo=1;maxaveragebitrate=256000`);
+}
+
+// Audio from a recording device (e.g. "VoiceMeeter Aux Output") instead of the screen share audio
+async function getDeviceAudio(name) {
+  try {
+    const tmp = await navigator.mediaDevices.getUserMedia({ audio: true }); // labels need a permission first
+    tmp.getTracks().forEach((t) => t.stop());
+    const dev = (await navigator.mediaDevices.enumerateDevices())
+      .find((d) => d.kind === 'audioinput' && d.label.toLowerCase().includes(name.toLowerCase()));
+    if (!dev) { log('Audio device not found: ' + name); return null; }
+    const s = await navigator.mediaDevices.getUserMedia({ audio: {
+      deviceId: { exact: dev.deviceId }, echoCancellation: false, noiseSuppression: false, autoGainControl: false,
+      channelCount: 2, sampleRate: 48000,
+    } });
+    log('Audio from: ' + dev.label);
+    return s.getAudioTracks()[0];
+  } catch (e) { log('Audio device error: ' + e.message); return null; }
+}
+
+function callQuest() {
+  if (!questConn || !stream) return;
+  if (call) call.close();
+  call = peer.call(questConn.peer, stream, { sdpTransform: stereoSdp });
+  const pc = call.peerConnection;
+  tuneSender(pc);
+  const vt = stream.getVideoTracks()[0];
+  const hasAudio = stream.getAudioTracks().length > 0;
+  pc.addEventListener('connectionstatechange', () => {
+    if (pc.connectionState === 'connected') {
+      tuneSender(pc);
+      const st = vt ? vt.getSettings() : {};
+      status('Live' + (hasAudio ? ' with audio' : ' (no audio track)') + ' - ' + (st.width || '?') + 'x' + (st.height || '?'), 'ok');
+    } else if (pc.connectionState === 'failed') status('Connection failed', 'bad');
+  });
+}
+
+async function share() {
+  $('btnShare').classList.remove('pulse');
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { frameRate: { ideal: +$('fpsSel').value }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: !audioDevice,
+      systemAudio: 'include',
+      selfBrowserSurface: 'exclude',
+    });
+  } catch (e) { status('Capture cancelled: ' + e.message, 'bad'); return; }
+  const vt = stream.getVideoTracks()[0];
+  if (vt) { vt.contentHint = 'motion'; vt.onended = stop; }
+  if (audioDevice) { const at = await getDeviceAudio(audioDevice); if (at) stream.addTrack(at); }
+  $('preview').srcObject = stream; $('preview').style.display = 'block'; $('preview').play();
+  $('btnShare').disabled = true; $('btnStop').disabled = false;
+  log('Capture started, audio tracks: ' + stream.getAudioTracks().length);
+  if (typeof window.is3meoShareStarted === 'function') window.is3meoShareStarted({ audio: stream.getAudioTracks().length });
+  callQuest();
+}
+
+function stop() {
+  if (call) call.close();
+  if (stream) stream.getTracks().forEach((t) => t.stop());
+  call = stream = null;
+  $('preview').style.display = 'none';
+  $('btnShare').disabled = false; $('btnStop').disabled = true;
+  status('Stopped sharing - waiting - code ' + code);
+}
+
+// ---------------- Settings tab (talks to the Bridge) ----------------
+for (const b of document.querySelectorAll('#tabs button')) b.onclick = () => {
+  for (const o of document.querySelectorAll('#tabs button')) { o.classList.toggle('on', o === b); $(o.dataset.tab).classList.toggle('hidden', o !== b); }
+  if (b.dataset.tab === 'tabSettings') loadSettings();
+  if (b.dataset.tab === 'tabMapping') loadMapping();
+};
+const canSettings = typeof window.is3meoGetConfig === 'function';
+$('noBridge').classList.toggle('hidden', canSettings);
+$('setBody').classList.toggle('hidden', !canSettings);
+const FS_KEYS = ['', 'F11', 'F', 'Enter', 'KeyF', 'F12'];
+let cfg = null, profileIds = ['stremio', 'potplayer', 'vlc', 'generic'];
+fetch('../profiles/index.json?t=' + Date.now()).then((r) => r.json()).then((ids) => { if (Array.isArray(ids)) profileIds = ids; }).catch(() => {});
+const esc = (v) => String(v ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const slug = (name) => (name || 'app').toLowerCase().replace(/[^a-z0-9]+/g, '') || 'app';
+const opts = (list, cur) => list.map((v) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(v || '(none)')}</option>`).join('');
+
+async function loadSettings() {
+  if (!canSettings) return;
+  cfg = await window.is3meoGetConfig();
+  $('sCode').value = cfg.code || '';
+  $('sBitrate').value = String(cfg.bitrate || 15000000);
+  $('sScreen').value = cfg.capture_source || 'Screen 1';
+  let devs = [];
+  try { devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput' && d.label).map((d) => d.label); } catch (e) {}
+  const cur = cfg.audio_device || '';
+  if (cur && !devs.some((l) => l.toLowerCase().includes(cur.toLowerCase()))) devs.unshift(cur);
+  $('sAudio').innerHTML = '<option value="">Screen share audio</option>' + devs.map((l) => {
+    const sel = cur && l.toLowerCase().includes(cur.toLowerCase());
+    return `<option value="${esc(l)}"${sel ? ' selected' : ''}>${esc(l)}</option>`;
+  }).join('');
+  renderApps();
+}
+
+function renderApps() {
+  const list = $('appList');
+  list.innerHTML = '';
+  cfg.apps.forEach((a, i) => {
+    const det = (cfg.detected || {})[a.id] || '';
+    const el = document.createElement('div');
+    el.className = 'app';
+    el.innerHTML = `
+      <div><label>Name</label><input data-k="name" value="${esc(a.name)}"></div>
+      <div><label>Control profile</label><select data-k="profile">${opts(profileIds.includes(a.profile) ? profileIds : [...profileIds, a.profile], a.profile)}</select></div>
+      <div class="full"><input data-k="path" placeholder="exe path (empty = auto detect)" value="${esc(a.path)}">
+        <button class="ghost small" data-act="browse">Browse</button>
+        <button class="ghost small" data-act="test">Test</button>
+        <button class="ghost small" data-act="del" title="Remove">X</button></div>
+      <div><label>Fullscreen key</label><select data-k="fullscreen_key">${opts(FS_KEYS.includes(a.fullscreen_key) ? FS_KEYS : [...FS_KEYS, a.fullscreen_key], a.fullscreen_key || '')}</select></div>
+      <div><label>Id</label><input value="${esc(a.id)}" disabled></div>
+      <div class="found ${det ? 'ok' : 'bad'}">${det ? 'Found: ' + esc(det) : 'Not found: set the exe'}</div>`;
+    el.addEventListener('input', (e) => { const k = e.target.dataset.k; if (k) a[k] = e.target.value; if (k === 'name') renderAuto(); });
+    el.addEventListener('click', async (e) => {
+      const act = e.target.dataset.act;
+      if (act === 'browse') { const r = await window.is3meoBrowseExe(a.path || det); if (r && r.path) { a.path = r.path.replace(/\//g, '\\'); cfg.detected[a.id] = a.path; renderApps(); } else if (r && r.error) setMsg('File picker failed: ' + r.error, 'bad'); }
+      else if (act === 'test') { await saveSettings(false); window.is3meoTestApp(a.id); setMsg('Opening ' + a.name + '...', 'ok'); }
+      else if (act === 'del') { cfg.apps.splice(i, 1); renderApps(); }
+    });
+    list.appendChild(el);
+  });
+  renderAuto();
+}
+
+function renderAuto() {
+  const cur = $('sAuto').value || cfg.auto_open_app || '';
+  $('sAuto').innerHTML = '<option value="">Nothing</option>' + cfg.apps.map((a) => `<option value="${esc(a.id)}"${a.id === cur ? ' selected' : ''}>${esc(a.name)}</option>`).join('');
+}
+
+$('btnAddApp').onclick = () => {
+  let id = 'app', n = 1;
+  while (cfg.apps.some((a) => a.id === id)) id = 'app' + (++n);
+  cfg.apps.push({ id, name: 'New app', path: '', profile: 'generic', fullscreen_key: '' });
+  renderApps();
+};
+
+function setMsg(t, cls) { $('setMsg').textContent = t; $('setMsg').style.color = cls === 'bad' ? 'var(--bad)' : 'var(--ok)'; }
+
+async function saveSettings(reload = true) {
+  // New apps get an id from their name the first time they are saved
+  for (const a of cfg.apps) if (/^app\d*$/.test(a.id) && a.name && a.name !== 'New app') {
+    let id = slug(a.name), n = 1; const base = id;
+    while (cfg.apps.some((o) => o !== a && o.id === id)) id = base + (++n);
+    a.id = id;
+  }
+  const out = {
+    code: $('sCode').value.trim(), bitrate: +$('sBitrate').value, audio_device: $('sAudio').value,
+    capture_source: $('sScreen').value, auto_open_app: $('sAuto').value, apps: cfg.apps,
+  };
+  const r = await window.is3meoSaveConfig(out);
+  if (!r || !r.ok) { setMsg((r && r.error) || 'Save failed', 'bad'); return false; }
+  setMsg('Saved', 'ok');
+  if (questConn && questConn.open) sendApps(questConn);
+  const restart = reload && (out.code !== code || out.bitrate + '' !== ($('bitrate').value) || out.audio_device !== audioDevice);
+  if (restart) { setMsg('Saved - restarting the stream page...', 'ok'); setTimeout(() => window.is3meoReload(), 600); }
+  return true;
+}
+$('btnSave').onclick = () => saveSettings(true);
+
+// The Quest asks which apps are configured ({t:'cmd', c:'listApps'}); also pushed on connect
+async function sendApps(c) {
+  if (!canSettings) return;
+  const conf = await window.is3meoGetConfig();
+  const apps = (conf.apps || []).map((a) => ({ id: a.id, name: a.name, profile: a.profile, found: !!(conf.detected || {})[a.id] }));
+  c.send({ t: 'apps', apps, auto: conf.auto_open_app || '' });
+}
+
+// ---------------- Button Mapping tab ----------------
+// Profile v2: buttons.media.{base, altL, altR}[slot] = {type: 'key'|'openApp'|'none', key, mods, label, action?}
+// Slots: L.trigger L.left L.right L.up L.down / R.a R.b R.trigger R.left R.right R.up R.down
+const MEDIA_COLOR = '#5fdc7c', NEUTRAL_COLOR = '#c9ced8';
+const EDIT_SLOTS = {
+  L: [['L.trigger', 'Trigger'], ['L.left', 'Stick ◀'], ['L.right', 'Stick ▶'], ['L.up', 'Stick ▲'], ['L.down', 'Stick ▼']],
+  R: [['R.a', 'A'], ['R.b', 'B'], ['R.trigger', 'Trigger'], ['R.left', 'Stick ◀'], ['R.right', 'Stick ▶'], ['R.up', 'Stick ▲'], ['R.down', 'Stick ▼']],
+};
+const LOCKED_SLOTS = {
+  L: [['X', 'Next mode (global)'], ['Y', 'Menu (global)'], ['Grip', 'Hold: ALT L (global)'], ['Stick click', 'Next favorite seat (global)']],
+  R: [['Grip', 'Hold: ALT R (global)'], ['Stick click', 'Light spill on/off (global)'], ['Trigger', 'Aiming at the menu / EXIT: clicks it first']],
+};
+const SUPPORTED_KEYS = new Set([
+  'Escape', 'Enter', 'Space', 'Backspace', 'Tab', 'Delete', 'Insert', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown',
+  'PageUp', 'PageDown', 'End', 'Home', 'Equal', 'Minus', 'Comma', 'Period', 'Slash', 'Semicolon', 'BracketLeft', 'BracketRight',
+  'Quote', 'Backquote', 'Backslash', 'MediaPlayPause', 'MediaNextTrack', 'MediaPrevTrack', 'MediaStop', 'VolumeUp', 'VolumeDown',
+  'VolumeMute', 'NumpadAdd', 'NumpadSubtract', 'NumpadMultiply', 'NumpadDivide', 'NumpadDecimal', 'PrintScreen', 'Pause', 'ContextMenu',
+  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((c) => 'Key' + c),
+  ...'0123456789'.split('').map((d) => 'Digit' + d), ...'0123456789'.split('').map((d) => 'Numpad' + d),
+  ...Array.from({ length: 12 }, (_, i) => 'F' + (i + 1)),
+]);
+const CODE_ALIAS = { MediaTrackNext: 'MediaNextTrack', MediaTrackPrevious: 'MediaPrevTrack', AudioVolumeUp: 'VolumeUp', AudioVolumeDown: 'VolumeDown', AudioVolumeMute: 'VolumeMute', NumpadEnter: 'Enter' };
+const PICK_KEYS = ['F11', 'Escape', 'Enter', 'Space', 'Tab', 'MediaPlayPause', 'MediaNextTrack', 'MediaPrevTrack', 'MediaStop', 'VolumeUp', 'VolumeDown', 'VolumeMute', 'F12', 'F5', 'Backspace'];
+const MOD_CODES = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight']);
+const KEY_PRETTY = {
+  ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓', Equal: '=', Minus: '-', Comma: ',', Period: '.',
+  Slash: '/', Semicolon: ';', BracketLeft: '[', BracketRight: ']', Quote: "'", Backquote: '`', Backslash: '\\', Escape: 'Esc',
+  MediaPlayPause: 'Media Play', MediaNextTrack: 'Media Next', MediaPrevTrack: 'Media Prev', MediaStop: 'Media Stop',
+  VolumeUp: 'Vol +', VolumeDown: 'Vol -', VolumeMute: 'Mute', NumpadAdd: 'Num +', NumpadSubtract: 'Num -', NumpadMultiply: 'Num *',
+  NumpadDivide: 'Num /', NumpadDecimal: 'Num .', Control: 'Ctrl', Meta: 'Win',
+};
+const prettyKey = (k) => KEY_PRETTY[k] || k.replace(/^Key/, '').replace(/^Digit/, '').replace(/^Numpad(\d)$/, 'Num $1');
+const prettyCombo = (s) => (s && s.key ? [...(s.mods || []), s.key].map(prettyKey).join(' + ') : '');
+
+// Old profiles only have "actions": build the same MEDIA layout the Quest used before v0.13
+function legacyMedia(p) {
+  const A = (p && p.actions) || {};
+  const k = (name) => { const a = A[name]; return a && a.key ? { type: 'key', key: a.key, mods: a.mods || [], label: a.label || name, action: name } : { type: 'none' }; };
+  return {
+    base: { 'R.a': k('playPause'), 'R.b': k('back'), 'R.left': k('seekBack'), 'R.right': k('seekFwd'), 'R.up': k('volUp'), 'R.down': k('volDown'),
+      'L.left': k('seekBackSmall'), 'L.right': k('seekFwdSmall'),
+      'R.trigger': { type: 'key', key: 'Enter', mods: [], label: 'Select (Enter)', action: 'playPause' }, 'L.trigger': { type: 'openApp', label: '' } },
+    altL: { 'R.a': k('next'), 'R.b': k('mute'), 'R.left': k('subDelayDown'), 'R.right': k('subDelayUp'), 'R.up': k('subSizeUp'), 'R.down': k('subSizeDown') },
+    altR: { 'R.a': k('fullscreen'), 'R.b': k('showUI'), 'R.trigger': { type: 'openApp', label: '' } },
+  };
+}
+
+const canMapping = typeof window.is3meoListProfiles === 'function';
+$('mapNoBridge').classList.toggle('hidden', canMapping);
+$('mapBody').classList.toggle('hidden', !canMapping);
+const map = { cfg: null, app: null, prof: null, source: '', layer: 'base', userIds: new Set(), capture: null, dirty: false };
+const deep = (o) => JSON.parse(JSON.stringify(o));
+function mMsg(t, bad) { $('mMsg').textContent = t; $('mMsg').style.color = bad ? 'var(--bad)' : 'var(--ok)'; }
+
+async function loadMapping() {
+  if (!canMapping) return;
+  map.cfg = await window.is3meoGetConfig();
+  const apps = map.cfg.apps || [];
+  const keep = map.app && apps.find((a) => a.id === map.app.id);
+  $('mApp').innerHTML = apps.map((a) => `<option value="${esc(a.id)}">${esc(a.name)}</option>`).join('');
+  if (keep) $('mApp').value = keep.id;
+  await pickApp($('mApp').value);
+}
+
+async function fetchRepoProfile(pid) {
+  try { const r = await fetch('../profiles/' + encodeURIComponent(pid) + '.json?t=' + Date.now()); if (r.ok) return await r.json(); } catch (e) {}
+  return null;
+}
+
+async function pickApp(appId) {
+  map.app = (map.cfg.apps || []).find((a) => a.id === appId) || null;
+  if (!map.app) { $('mSvg').innerHTML = ''; return; }
+  const pid = map.app.profile || map.app.id;
+  const users = await window.is3meoListProfiles();
+  map.userIds = new Set(users.map((p) => p.id));
+  let prof = users.find((p) => p.id === pid);
+  map.source = prof ? 'custom' : '';
+  if (!prof) { prof = await fetchRepoProfile(pid); map.source = prof ? 'default' : 'new'; }
+  if (!prof) prof = { id: pid, name: map.app.name, app: map.app.id, actions: {} };
+  prof = deep(prof);
+  if (!prof.buttons || !prof.buttons.media) prof.buttons = { ...(prof.buttons || {}), media: legacyMedia(prof) };
+  for (const l of ['base', 'altL', 'altR']) prof.buttons.media[l] = prof.buttons.media[l] || {};
+  map.prof = prof; map.dirty = false;
+  renderMapping();
+}
+
+function slotData(id) {
+  const layer = map.prof.buttons.media[map.layer];
+  return layer[id] || (layer[id] = { type: 'none' });
+}
+const slotLabel = (s) => (!s || s.type === 'none' ? '' : s.type === 'openApp' ? (s.label || 'Open app') : (s.label || prettyCombo(s)));
+
+function renderMapping() {
+  const p = map.prof, pid = p.id, a = map.app;
+  const src = { custom: 'your custom mapping', default: 'the default mapping from the repo', new: 'a new empty mapping' }[map.source];
+  const shared = (map.cfg.apps || []).filter((o) => (o.profile || o.id) === pid).length > 1;
+  $('mInfo').innerHTML = `Editing profile <b>${esc(p.name || pid)}</b> (<code>${esc(pid)}</code>), ${src}.` +
+    (shared ? ` Other apps use this profile too. <button class="ghost small" id="mOwn">Give ${esc(a.name)} its own profile</button>` : '') +
+    (map.dirty ? ' <b style="color:var(--acc)">Unsaved changes</b>' : '');
+  if ($('mOwn')) $('mOwn').onclick = makeOwnProfile;
+  $('mReset').disabled = map.source !== 'custom';
+  for (const b of $('mLayer').querySelectorAll('button')) b.classList.toggle('on', b.dataset.l === map.layer);
+  renderList('L'); renderList('R');
+  drawControllers();
+}
+
+function renderList(hand) {
+  const box = $('mList' + hand);
+  box.innerHTML = '';
+  for (const [id, name] of EDIT_SLOTS[hand]) {
+    const s = slotData(id);
+    const row = document.createElement('div');
+    row.className = 'mRow'; row.dataset.slot = id;
+    row.innerHTML = `
+      <span class="mName">${esc(name)}</span>
+      <select class="mType"><option value="key">Key</option><option value="openApp">Open app</option><option value="none">Nothing</option></select>
+      <input class="mLabel" maxlength="16" placeholder="${s.type === 'openApp' ? 'Open app' : 'Label in VR'}" value="${esc(s.type === 'none' ? '' : s.label || '')}">
+      <div class="mKeys"${s.type === 'openApp' ? ' style="display:none"' : ''}>
+        <input class="mKey" readonly placeholder="click, then press keys" value="${esc(prettyCombo(s))}">
+        <select class="mPick"><option value="">or pick...</option>${PICK_KEYS.map((k) => `<option value="${k}">${esc(prettyKey(k))}</option>`).join('')}</select>
+      </div>`;
+    row.querySelector('.mType').value = s.type || 'none';
+    row.querySelector('.mType').onchange = (e) => {
+      s.type = e.target.value;
+      if (s.type !== 'key') { delete s.key; s.mods = []; }
+      if (s.type === 'none') s.label = '';
+      changed(); renderList(hand);
+    };
+    row.querySelector('.mLabel').oninput = (e) => { s.label = e.target.value; changed(); };
+    const keyBox = row.querySelector('.mKey');
+    keyBox.onfocus = () => { map.capture = { id, hand, el: keyBox }; keyBox.classList.add('cap'); keyBox.value = 'press keys...'; };
+    keyBox.onblur = () => { keyBox.classList.remove('cap'); if (map.capture && map.capture.el === keyBox) map.capture = null; keyBox.value = prettyCombo(slotData(id)); };
+    row.querySelector('.mPick').onchange = (e) => { if (e.target.value) setKey(id, e.target.value, []); renderList(hand); };
+    row.onmouseenter = () => hot(id, true);
+    row.onmouseleave = () => hot(id, false);
+    box.appendChild(row);
+  }
+  for (const [name, what] of LOCKED_SLOTS[hand]) {
+    const row = document.createElement('div');
+    row.className = 'mRow locked';
+    row.innerHTML = `<span class="mName">${esc(name)}</span><span>${esc(what)}</span>`;
+    box.appendChild(row);
+  }
+}
+
+function setKey(id, key, mods) {
+  const s = slotData(id);
+  const oldAuto = !s.label || s.label === prettyCombo(s);
+  s.type = 'key'; s.key = key; s.mods = mods;
+  delete s.action; // a new key no longer means the old built-in action
+  if (oldAuto) s.label = prettyCombo(s).slice(0, 16);
+  changed();
+}
+
+function changed() {
+  map.dirty = true;
+  drawControllers();
+  const info = $('mInfo');
+  if (info && !info.innerHTML.includes('Unsaved')) info.insertAdjacentHTML('beforeend', ' <b style="color:var(--acc)">Unsaved changes</b>');
+}
+
+// Key capture: the focused key box records the next key press (with Ctrl / Shift / Alt / Win)
+window.addEventListener('keydown', (e) => {
+  const c = map.capture;
+  if (!c) return;
+  e.preventDefault(); e.stopPropagation();
+  if (MOD_CODES.has(e.code)) return; // wait for the real key
+  const key = CODE_ALIAS[e.code] || e.code;
+  if (!SUPPORTED_KEYS.has(key)) { mMsg('Key not supported: ' + e.code, true); return; }
+  const mods = [];
+  if (e.ctrlKey) mods.push('Control');
+  if (e.shiftKey) mods.push('Shift');
+  if (e.altKey) mods.push('Alt');
+  if (e.metaKey) mods.push('Meta');
+  setKey(c.id, key, mods);
+  mMsg('');
+  const hand = c.hand;
+  map.capture = null;
+  renderList(hand);
+}, true);
+
+function hot(id, on) {
+  const h = id.split('.')[0];
+  const g = $('mSvg').querySelector(`.hs[data-slot="${stickOf(id) ? h + '.stick' : id}"]`);
+  if (g) g.classList.toggle('hot', on);
+}
+const stickOf = (id) => /\.(left|right|up|down)$/.test(id);
+
+// ---- the drawing: two Quest controllers seen from above, labels like in VR ----
+function drawControllers() {
+  const svg = $('mSvg');
+  const m = map.prof.buttons.media[map.layer];
+  const lab = (id) => slotLabel(m[id]);
+  const altL = map.layer === 'altL', altR = map.layer === 'altR';
+  const stickLines = (h, clickHint) => {
+    const l = lab(h + '.left'), r = lab(h + '.right'), u = lab(h + '.up'), d = lab(h + '.down');
+    const a = l || r ? '◀ ' + (l || '-') + '  ▶ ' + (r || '-') : '';
+    const b = u || d ? '▲ ' + (u || '-') + '  ▼ ' + (d || '-') : '';
+    return a ? [a, b || clickHint] : b ? [b, clickHint] : ['', clickHint];
+  };
+  // hand: 'L' | 'R'; cx: controller center; side: -1 labels on the left, +1 on the right
+  const parts = [];
+  const tag = (t1, t2, color, x, y, side, ax, ay, slot) => {
+    const w = Math.max(t1.length * 8.4, (t2 || '').length * 7) + 26;
+    const h = t2 ? 40 : 26;
+    const x0 = side < 0 ? x - w : x;
+    const ex = side < 0 ? x : x;
+    let s = `<line x1="${ax}" y1="${ay}" x2="${ex}" y2="${y}" stroke="${color}" stroke-opacity="0.55" stroke-width="1.5"/>`;
+    s += `<g class="tagbox" data-for="${slot}"><rect x="${x0}" y="${y - h / 2}" width="${w}" height="${h}" rx="7" fill="rgba(10,12,18,0.9)" stroke="#262b36"/>`;
+    s += `<rect x="${x0}" y="${y - h / 2}" width="4" height="${h}" fill="${color}"/>`;
+    s += `<text x="${x0 + 12}" y="${t2 ? y - 5 : y + 5}" fill="${t1 ? color : '#555b6b'}" font-size="14" font-weight="700">${esc(t1 || '(nothing)')}</text>`;
+    if (t2) s += `<text x="${x0 + 12}" y="${y + 13}" fill="#aab0c0" font-size="11.5">${esc(t2)}</text>`;
+    return s + '</g>';
+  };
+  const ctrl = (hand, cx, cy) => {
+    const f = hand === 'R' ? 1 : -1; // mirror the left one
+    const side = hand === 'R' ? 1 : -1;
+    const P = (x, y) => [cx + x * f, cy + y];
+    const [sx, sy] = P(-16, -52), [ax, ay] = P(26, -26), [bx, by] = P(34, -64), [tx, ty] = P(0, -128), [gx, gy] = P(-60, 34);
+    const held = (hand === 'L' && altL) || (hand === 'R' && altR);
+    const body = `M ${P(-58, -70)} Q ${P(-64, -112)} ${P(0, -114)} Q ${P(66, -112)} ${P(62, -62)} L ${P(52, 40)} Q ${P(46, 112)} ${P(2, 116)} Q ${P(-42, 112)} ${P(-48, 40)} Z`;
+    let s = `<path d="${body}" fill="#1d212b" stroke="#3a4050" stroke-width="2"/>`;
+    s += `<g class="hs" data-slot="${hand}.trigger"><rect x="${tx - 24}" y="${ty - 9}" width="48" height="18" rx="9" fill="#232835" stroke="#6b7385" stroke-dasharray="4 3"/></g>`;
+    s += `<g class="hs" data-slot="${hand}.grip"><rect x="${gx - 8}" y="${gy - 32}" width="16" height="64" rx="8" fill="${held ? MEDIA_COLOR : '#232835'}" fill-opacity="${held ? 0.5 : 1}" stroke="#6b7385" stroke-dasharray="4 3"/></g>`;
+    s += `<g class="hs" data-slot="${hand}.stick"><circle cx="${sx}" cy="${sy}" r="19" fill="#12151c" stroke="#6b7385" stroke-width="2"/><circle cx="${sx}" cy="${sy}" r="11" fill="#2b303c"/></g>`;
+    const fb = hand === 'R' ? ['a', 'b'] : ['x', 'y'];
+    s += `<g class="hs" data-slot="${hand}.${fb[0]}"><circle cx="${ax}" cy="${ay}" r="12" fill="#2b303c" stroke="#6b7385" stroke-width="2"/></g>`;
+    s += `<g class="hs" data-slot="${hand}.${fb[1]}"><circle cx="${bx}" cy="${by}" r="12" fill="#2b303c" stroke="#6b7385" stroke-width="2"/></g>`;
+    s += `<text x="${ax}" y="${ay + 4.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#c9ced8">${fb[0].toUpperCase()}</text>`;
+    s += `<text x="${bx}" y="${by + 4.5}" text-anchor="middle" font-size="12" font-weight="700" fill="#c9ced8">${fb[1].toUpperCase()}</text>`;
+    const [mx, my] = P(10, 4);
+    s += `<circle cx="${mx}" cy="${my}" r="5" fill="#2b303c" stroke="#4a5162"/>`;
+    // labels in a column outside each controller
+    const col = hand === 'R' ? cx + 118 : cx - 118;
+    const G = (t) => [t, '', NEUTRAL_COLOR];
+    const M = (id) => { const t = lab(id); return [t, '', t ? MEDIA_COLOR : '#555b6b']; };
+    let rows;
+    if (hand === 'L') {
+      const [s1, s2] = stickLines('L', 'Click: next seat');
+      rows = [
+        ['L.trigger', lab('L.trigger') ? M('L.trigger') : G(''), tx, ty, cy - 150],
+        ['L.y', G('Menu'), bx, by, cy - 88],
+        ['L.stick', [s1, s2, s1 ? MEDIA_COLOR : NEUTRAL_COLOR], sx, sy, cy - 38],
+        ['L.x', G(altL ? 'Prev mode' : 'Mode ▸'), ax, ay, cy + 14],
+        ['L.grip', G(altL ? 'ALT L (held)' : 'Hold: ALT L'), gx, gy, cy + 70],
+      ];
+    } else {
+      const [s1, s2] = stickLines('R', 'Click: light on/off');
+      rows = [
+        ['R.trigger', lab('R.trigger') ? M('R.trigger') : G('Menu / Exit (laser)'), tx, ty, cy - 150],
+        ['R.b', M('R.b'), bx, by, cy - 88],
+        ['R.stick', [s1, s2, s1 ? MEDIA_COLOR : NEUTRAL_COLOR], sx, sy, cy - 38],
+        ['R.a', M('R.a'), ax, ay, cy + 14],
+        ['R.grip', G(altR ? 'ALT R (held)' : 'Hold: ALT R'), gx, gy, cy + 70],
+      ];
+    }
+    for (const [slot, [t1, t2, color], hx, hy, ly] of rows) {
+      const edgeX = hand === 'R' ? col : col;
+      s += tag(t1 || (color === NEUTRAL_COLOR ? '' : ''), t2, color === '#555b6b' ? '#555b6b' : color, edgeX, ly, side, hx, hy, slot);
+    }
+    return s;
+  };
+  const title = { base: 'MEDIA mode', altL: 'MEDIA mode + ALT L', altR: 'MEDIA mode + ALT R' }[map.layer];
+  parts.push(`<text x="410" y="30" text-anchor="middle" font-size="15" font-weight="700" fill="${MEDIA_COLOR}">${title} · ${esc(map.app ? map.app.name : '')}</text>`);
+  parts.push(ctrl('L', 300, 250), ctrl('R', 520, 250));
+  svg.innerHTML = parts.join('');
+  // click a part of the drawing: jump to its row
+  for (const g of svg.querySelectorAll('.hs, .tagbox')) {
+    const slot = g.dataset.slot || g.dataset.for;
+    g.style.cursor = 'pointer';
+    g.onclick = () => {
+      const [h, part] = slot.split('.');
+      const id = part === 'stick' ? h + '.right' : h + '.' + part;
+      const row = document.querySelector(`.mRow[data-slot="${id}"]`);
+      if (!row) { mMsg('That button is global and cannot be changed', true); return; }
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const inp = row.querySelector('.mLabel'); if (inp) inp.focus();
+      row.classList.add('hot'); setTimeout(() => row.classList.remove('hot'), 1200);
+    };
+  }
+}
+
+for (const b of $('mLayer').querySelectorAll('button')) b.onclick = () => { map.layer = b.dataset.l; renderMapping(); };
+$('mApp').onchange = async (e) => {
+  if (map.dirty && !confirmLeave()) { $('mApp').value = map.app.id; return; }
+  await pickApp(e.target.value);
+};
+function confirmLeave() { return window.confirm('Drop the unsaved mapping changes?'); }
+
+function cleanProfile() {
+  const p = deep(map.prof);
+  p.version = 2;
+  p.app = p.app || map.app.id;
+  for (const l of ['base', 'altL', 'altR']) {
+    const layer = p.buttons.media[l];
+    for (const k of Object.keys(layer)) if (!layer[k] || layer[k].type === 'none') delete layer[k];
+  }
+  return p;
+}
+
+$('mSave').onclick = async () => {
+  const r = await window.is3meoSaveProfile(cleanProfile());
+  if (!r || !r.ok) { mMsg((r && r.error) || 'Save failed', true); return; }
+  map.source = 'custom'; map.dirty = false;
+  mMsg('Saved' + (questConn && questConn.open ? ' - sent to the Quest' : ''));
+  if (questConn && questConn.open) sendProfiles(questConn);
+  renderMapping();
+};
+$('mReset').onclick = async () => {
+  if (!window.confirm('Delete your custom mapping for ' + map.prof.id + ' and go back to the default?')) return;
+  await window.is3meoDeleteProfile(map.prof.id);
+  if (questConn && questConn.open) sendProfiles(questConn);
+  mMsg('Back to the default mapping');
+  await pickApp(map.app.id);
+};
+
+async function makeOwnProfile() {
+  const a = map.app;
+  let id = a.id.toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'app', n = 1;
+  const base = id;
+  while (map.userIds.has(id) && id !== a.id) id = base + (++n);
+  map.prof.id = id; map.prof.name = a.name; map.prof.app = a.id;
+  const r = await window.is3meoSaveProfile(cleanProfile());
+  if (!r || !r.ok) { mMsg((r && r.error) || 'Save failed', true); return; }
+  const conf = await window.is3meoGetConfig();
+  for (const o of conf.apps) if (o.id === a.id) o.profile = id;
+  await window.is3meoSaveConfig({ apps: conf.apps, code: conf.code });
+  if (questConn && questConn.open) { sendProfiles(questConn); sendApps(questConn); }
+  mMsg(a.name + ' now has its own profile');
+  await loadMapping();
+}
+
+$('mJson').onclick = () => { $('mJsonText').value = JSON.stringify(cleanProfile(), null, 2); $('jsonModal').classList.remove('hidden'); };
+$('mJsonClose').onclick = () => $('jsonModal').classList.add('hidden');
+$('mJsonCopy').onclick = async () => { $('mJsonText').select(); try { await navigator.clipboard.writeText($('mJsonText').value); } catch (e) { document.execCommand('copy'); } mMsg('Copied'); };
+$('mJsonLoad').onclick = () => {
+  try {
+    const p = JSON.parse($('mJsonText').value);
+    if (!p || typeof p !== 'object') throw new Error('not an object');
+    if (!p.buttons || !p.buttons.media) p.buttons = { ...(p.buttons || {}), media: legacyMedia(p) };
+    for (const l of ['base', 'altL', 'altR']) p.buttons.media[l] = p.buttons.media[l] || {};
+    p.id = map.prof.id; // keeps the app's profile id; use Save to keep it
+    p.app = map.app.id;
+    map.prof = p;
+    changed();
+    renderMapping();
+    $('jsonModal').classList.add('hidden');
+    mMsg('Loaded - press Save to keep it');
+  } catch (e) { mMsg('Bad JSON: ' + e.message, true); }
+};
+
+// Custom mappings go to the Quest together with the app list
+async function sendProfiles(c) {
+  if (!canMapping) return;
+  c.send({ t: 'profiles', list: await window.is3meoListProfiles() });
+}
+
+$('btnShare').onclick = share;
+$('btnStop').onclick = stop;
+$('code').addEventListener('change', startPeer);
+startPeer();
+</script>
+</body>
+</html>
