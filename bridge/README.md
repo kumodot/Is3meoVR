@@ -38,6 +38,14 @@ The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked
 
 On the Quest (Light Spill Lab v0.12.0+) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
 
+## PC speakers while the Quest is linked (v0.8.0, optional)
+
+Off by default ("Leave them on"). With **VoiceMeeter**, pick "Mute VoiceMeeter outputs" in Settings and tick the hardware outputs (A1, A2...) that are your speakers; their device names are listed. When the Quest connects the Bridge mutes them, and puts them back exactly as they were when the Quest disconnects or the Bridge closes (even after a crash: the next start restores them from `voicemeeter_restore.json`). The Quest keeps its sound because it comes from a virtual bus (e.g. B2 = "VoiceMeeter Aux Output"). **Test** mutes the ticked ones for 3 s.
+
+Tip: keep the Windows volume at 100%. With VoiceMeeter the Windows slider sits before the mixer, so lowering it also lowers the Quest. Set the loudness on the Quest (headset buttons or the player volume).
+
+Without VoiceMeeter nothing changes. A VB-CABLE mode for everyone else is planned.
+
 ## Button Mapping tab (v0.7.0, blueprint layout in v0.7.1)
 
 Pick an app: the left controller's commands are listed on the left, the right one's on the right, with the controller blueprint in the middle. Every button has its own color: pick a command (or click a button on the drawing, on a stick click the side you want) and its box lights up in that color while a matching dot pulses on the real button, with the label next to it. Choose the layer (Normal, ALT L = left grip held, ALT R = right grip held), then for each button set the type (Key / Open app / Nothing), the label and the shortcut: click the key box and press it (Ctrl / Shift / Alt / Win work), or pick keys the browser keeps for itself (F11, media keys) from the list. X, Y, grips and stick clicks stay global.
