@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.9.1 | Labels flat on the controller face, lit controllers |
 | Light Spill Lab | 0.9.0 | Per-button labels, FLY / MEDIA / PC colors, smaller EXIT, door with panic bar, stereo |
 | Stream Sender | 0.3.0 | Audio from a recording device, stereo Opus |
 | Is3meo Bridge | 0.3.0 | Auto-select "Screen 1" (fixes the share picker), VoiceMeeter audio, single instance |

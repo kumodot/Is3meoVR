@@ -1,11 +1,11 @@
 @echo off
-REM Light Spill Lab launcher - v0.9.0
+REM Light Spill Lab launcher - v0.9.1
 REM Starts a local web server in this folder and opens the app in the browser.
 REM Quest 3 over USB (developer mode + adb installed):
 REM   adb reverse tcp:8080 tcp:8080
-REM   then open http://localhost:8080/light_spill_lab_v0.9.0.html in the Quest Browser
+REM   then open http://localhost:8080/light_spill_lab_v0.9.1.html in the Quest Browser
 cd /d "%~dp0"
-set FILE=light_spill_lab_v0.9.0.html
+set FILE=light_spill_lab_v0.9.1.html
 
 where python >nul 2>nul
 if %errorlevel%==0 (
