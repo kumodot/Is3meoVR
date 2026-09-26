@@ -8,6 +8,9 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.15.0 | Poster library with backdrops, series + episodes |
+| Is3meo Bridge | 0.10.0 | TMDB / fanart.tv artwork, show + episode parsing |
+| Stream Sender | 0.9.0 | Artwork settings |
 | Light Spill Lab | 0.14.0 | Media library panel (hold Y), Recline for lying down |
 | Is3meo Bridge | 0.9.0 | Media library: folders per category, thumbnails, play with a player |
 | Stream Sender | 0.8.0 | Library + app type settings |
@@ -63,6 +66,9 @@ Then open `http://localhost:8080/` in the Quest Browser.
 3. Push. GitHub Pages updates in about a minute.
 
 ## Credits
+
+Posters and metadata from [TMDB](https://www.themoviedb.org/). This product uses the TMDB API but is not endorsed or certified by TMDB.
+
 
 Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
 
