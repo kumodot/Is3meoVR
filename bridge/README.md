@@ -44,7 +44,7 @@ Settings > **Media library**: categories (Movies, TV Shows, Misc...) with one or
 
 On the Quest (Light Spill Lab v0.14.0+): **hold Y** (or menu > Library) opens the library panel in front of the screen. Tabs = categories, stick = pages, top right = player, trigger on a poster = play. The Bridge opens the file with that player, fullscreen, and the Quest switches to MEDIA with the player's profile. Hold Y again anytime to go back to the library. "Open when the Quest connects" can be **Media library (in VR)**.
 
-Artwork (v0.10.0): put a free TMDB key (and optionally a fanart.tv key) in Settings > Artwork. The Bridge reads the title + year (`Movie.Name.2017.mkv`) or show + episode (`Show.S01E02.mkv`) from the file name, and the Quest gets real posters, a backdrop behind the panel and the synopsis. Episodes of a show are grouped under one poster. Without a key it falls back to the options below. This product uses the TMDB API but is not endorsed or certified by TMDB.
+Artwork (v0.10.0): works out of the box with a built-in TMDB key (like Kodi). Optionally set your own TMDB key and a fanart.tv key in Settings > Artwork. The Bridge reads the title + year (`Movie.Name.2017.mkv`) or show + episode (`Show.S01E02.mkv`) from the file name, and the Quest gets real posters, a backdrop behind the panel and the synopsis. Episodes of a show are grouped under one poster. Without a key it falls back to the options below. This product uses the TMDB API but is not endorsed or certified by TMDB.
 
 Thumbnails: a `poster.jpg` / `folder.jpg` / `<video name>.jpg` next to the file, else a frame grabbed with **ffmpeg** (must be on PATH). Cached in `bridge/thumbs/`. File names with SBS / HSBS / 3D / OU get a 3D tag.
 

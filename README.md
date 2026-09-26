@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Is3meo Bridge | 0.10.1 | Built-in TMDB key: posters with no setup |
+| Stream Sender | 0.9.1 | TMDB key now optional |
 | Light Spill Lab | 0.15.0 | Poster library with backdrops, series + episodes |
 | Is3meo Bridge | 0.10.0 | TMDB / fanart.tv artwork, show + episode parsing |
 | Stream Sender | 0.9.0 | Artwork settings |
