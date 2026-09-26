@@ -2,3 +2,4 @@ bridge/is3meo_bridge_config.json
 __pycache__/
 *.pyc
 bridge/voicemeeter_restore.json
+bridge/thumbs/

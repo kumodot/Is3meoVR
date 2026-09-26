@@ -8,6 +8,9 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.14.0 | Media library panel (hold Y), Recline for lying down |
+| Is3meo Bridge | 0.9.0 | Media library: folders per category, thumbnails, play with a player |
+| Stream Sender | 0.8.0 | Library + app type settings |
 | Is3meo Bridge | 0.8.1 | Opens Stream Sender 0.7.1 |
 | Stream Sender | 0.7.1 | Fix: 40 Mbps shows on the Stream tab |
 | Is3meo Bridge | 0.8.0 | Optional: mute the VoiceMeeter speaker outputs while the Quest is linked |

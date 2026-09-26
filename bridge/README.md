@@ -38,6 +38,14 @@ The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked
 
 On the Quest (Light Spill Lab v0.12.0+) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
 
+## Media library (v0.9.0)
+
+Settings > **Media library**: categories (Movies, TV Shows, Misc...) with one or more folders each, and a default player. Apps now have a **Type**: `app` (just opens, e.g. Stremio) or `player` (gets the video file, with **Open file args** like `"{file}"` for PotPlayer or `--fullscreen "{file}"` for VLC). **Rescan** shows how many videos each category has.
+
+On the Quest (Light Spill Lab v0.14.0+): **hold Y** (or menu > Library) opens the library panel in front of the screen. Tabs = categories, stick = pages, top right = player, trigger on a poster = play. The Bridge opens the file with that player, fullscreen, and the Quest switches to MEDIA with the player's profile. Hold Y again anytime to go back to the library. "Open when the Quest connects" can be **Media library (in VR)**.
+
+Thumbnails: a `poster.jpg` / `folder.jpg` / `<video name>.jpg` next to the file, else a frame grabbed with **ffmpeg** (must be on PATH). Cached in `bridge/thumbs/`. File names with SBS / HSBS / 3D / OU get a 3D tag.
+
 ## PC speakers while the Quest is linked (v0.8.0, optional)
 
 Off by default ("Leave them on"). With **VoiceMeeter**, pick "Mute VoiceMeeter outputs" in Settings and tick the hardware outputs (A1, A2...) that are your speakers; their device names are listed. When the Quest connects the Bridge mutes them, and puts them back exactly as they were when the Quest disconnects or the Bridge closes (even after a crash: the next start restores them from `voicemeeter_restore.json`). The Quest keeps its sound because it comes from a virtual bus (e.g. B2 = "VoiceMeeter Aux Output"). **Test** mutes the ticked ones for 3 s.
