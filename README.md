@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.16.0 | New control scheme: Master / Loco roles, grip to activate, gaze labels, B = back, B hold = Library |
+| Is3meo Bridge | 0.10.2 | Opening a media app closes the other one |
 | Is3meo Bridge | 0.10.1 | Built-in TMDB key: posters with no setup |
 | Stream Sender | 0.9.1 | TMDB key now optional |
 | Light Spill Lab | 0.15.0 | Poster library with backdrops, series + episodes |
