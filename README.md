@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Is3meo Bridge | 0.10.5 | Hides the browser's "sharing your screen" bar automatically |
 | Is3meo Bridge | 0.10.4 | Opens Stream Sender 0.9.2 |
 | Stream Sender | 0.9.2 | Shows the Bridge version next to its own |
 | Light Spill Lab | 0.16.1 | Wider gaze cone, grey labels until grip, walk where you look |
