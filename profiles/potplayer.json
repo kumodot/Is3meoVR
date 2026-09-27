@@ -2,7 +2,7 @@
   "id": "potplayer",
   "name": "PotPlayer",
   "app": "potplayer",
-  "version": 1,
+  "version": 2,
   "notes": "PotPlayer default hotkeys as far as we know. Edit if your setup differs.",
   "actions": {
     "playPause": {
@@ -47,14 +47,8 @@
       "key": "Enter",
       "label": "Fullscreen"
     },
-    "back": {
-      "key": "Escape",
-      "label": "Back"
-    },
-    "showUI": {
-      "key": "Tab",
-      "label": "Info"
-    },
+    "back": null,
+    "showUI": null,
     "next": {
       "key": "PageDown",
       "label": "Next file"
