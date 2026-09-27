@@ -2,7 +2,7 @@
   "id": "stremio",
   "name": "Stremio",
   "app": "stremio",
-  "version": 1,
+  "version": 2,
   "notes": "Official Stremio shortcuts (stremio.zendesk.com, Shortcuts in Stremio).",
   "actions": {
     "playPause": {
@@ -48,7 +48,7 @@
       "label": "Fullscreen"
     },
     "back": {
-      "key": "Escape",
+      "key": "Backspace",
       "label": "Back"
     },
     "showUI": {
@@ -77,6 +77,10 @@
     "subDelayDown": {
       "key": "KeyG",
       "label": "Subs -250ms"
+    },
+    "esc": {
+      "key": "Escape",
+      "label": "Esc"
     }
   }
 }
