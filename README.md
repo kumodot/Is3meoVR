@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.16.3 | 3D SBS / OU playback + 3D badge, Apps launcher tab, full-screen library |
+| Is3meo Bridge | 0.10.6 | Apps in the library, 3D type from the file name, app poster images (Stream Sender 0.9.3) |
 | Light Spill Lab | 0.16.2 | Menu on the Loco hand driven by its stick, interact pointer (grip + trigger hold, A = click), double B = Esc |
 | Is3meo Bridge | 0.10.5 | Hides the browser's "sharing your screen" bar automatically |
 | Is3meo Bridge | 0.10.4 | Opens Stream Sender 0.9.2 |
