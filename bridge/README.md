@@ -12,14 +12,14 @@ Small Windows helper that lets the Quest start and control the PC stream on its 
 
 ## Start everything from the Quest (no need to sit at the PC)
 
-Run `add_to_startup.bat` once. From then on the Bridge starts with Windows and waits. Put on the Quest anywhere in the house, open the Light Spill Lab: it links with the saved code, the Bridge opens Stremio and starts sharing. The PC only needs to be on, awake and unlocked (a locked Windows session shows the lock screen and blocks input).
+Run `add_to_startup.bat` once. From then on the Bridge starts with Windows and waits. Put on the Quest anywhere in the house, open SilVR: it links with the saved code, the Bridge opens Stremio and starts sharing. The PC only needs to be on, awake and unlocked (a locked Windows session shows the lock screen and blocks input).
 
 ## Setup
 
 1. Python 3.10+ and Microsoft Edge (or Chrome) installed.
 2. Run `install_bridge.bat` once (installs Playwright for Python).
 3. Run `run_bridge.bat`. The console shows the PC code.
-4. On the Quest, open Light Spill Lab **v0.11.0+**, type the code under **PC link**, press **Connect**, keep **Auto** on.
+4. On the Quest, open SilVR (formerly Light Spill Lab), type the code under **PC link**, press **Connect**, keep **Auto** on.
 5. Optional: `add_to_startup.bat` starts the Bridge with Windows, so the Quest can always find it.
 
 ## Quest controls
@@ -36,13 +36,13 @@ Every button has a label next to it in VR (mode color, white = same in every mod
 
 The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked from a list), captured screen, the app opened on connect, and the **apps the Quest can open**. For each app: name, exe (**Browse** opens a file picker, empty = auto detect), control profile and fullscreen key. **Test** opens it on the PC right away. **Save** writes `is3meo_bridge_config.json`.
 
-On the Quest (Light Spill Lab v0.12.0+) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
+On the Quest (SilVR (formerly Light Spill Lab)) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
 
 ## Media library (v0.9.0)
 
 Settings > **Media library**: categories (Movies, TV Shows, Misc...) with one or more folders each, and a default player. Apps now have a **Type**: `app` (just opens, e.g. Stremio) or `player` (gets the video file, with **Open file args** like `"{file}"` for PotPlayer or `--fullscreen "{file}"` for VLC). **Rescan** shows how many videos each category has.
 
-On the Quest (Light Spill Lab v0.14.0+): **hold Y** (or menu > Library) opens the library panel in front of the screen. Tabs = categories, stick = pages, top right = player, trigger on a poster = play. The Bridge opens the file with that player, fullscreen, and the Quest switches to MEDIA with the player's profile. Hold Y again anytime to go back to the library. "Open when the Quest connects" can be **Media library (in VR)**.
+On the Quest (SilVR (formerly Light Spill Lab)): **hold Y** (or menu > Library) opens the library panel in front of the screen. Tabs = categories, stick = pages, top right = player, trigger on a poster = play. The Bridge opens the file with that player, fullscreen, and the Quest switches to MEDIA with the player's profile. Hold Y again anytime to go back to the library. "Open when the Quest connects" can be **Media library (in VR)**.
 
 Artwork (v0.10.0): works out of the box with a built-in TMDB key (like Kodi). Optionally set your own TMDB key and a fanart.tv key in Settings > Artwork. The Bridge reads the title + year (`Movie.Name.2017.mkv`) or show + episode (`Show.S01E02.mkv`) from the file name, and the Quest gets real posters, a backdrop behind the panel and the synopsis. Episodes of a show are grouped under one poster. Without a key it falls back to the options below. This product uses the TMDB API but is not endorsed or certified by TMDB.
 
