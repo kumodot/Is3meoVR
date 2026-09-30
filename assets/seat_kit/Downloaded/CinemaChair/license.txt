@@ -1,0 +1,11 @@
+Model Information:
+* title:	Cinema chair
+* source:	https://sketchfab.com/3d-models/cinema-chair-c958af2d31244964a75f4b967d315b93
+* author:	qwerty14t (https://sketchfab.com/qwerty14t)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Cinema chair" (https://sketchfab.com/3d-models/cinema-chair-c958af2d31244964a75f4b967d315b93) by qwerty14t (https://sketchfab.com/qwerty14t) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

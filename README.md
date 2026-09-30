@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| Light Spill Lab | 0.16.5 | Custom room model (assets/cinema/cinema_room_custom.glb), full room export |
 | Light Spill Lab | 0.16.4 | Menu pulled back toward the wrist |
 | Light Spill Lab | 0.16.3 | 3D SBS / OU playback + 3D badge, Apps launcher tab, full-screen library |
 | Is3meo Bridge | 0.10.6 | Apps in the library, 3D type from the file name, app poster images (Stream Sender 0.9.3) |
