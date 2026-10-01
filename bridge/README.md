@@ -1,8 +1,8 @@
-# Is3meo Bridge
+# SilVRCine Bridge (formerly Is3meo Bridge)
 
 Small Windows helper that lets the Quest start and control the PC stream on its own.
 
-- Waits for the Quest with a **fixed PC code (8 random characters, keep it private: it gives access to your screen and mouse)** (saved in `is3meo_bridge_config.json`).
+- Waits for the Quest with a **fixed PC code (8 random characters, keep it private: it gives access to your screen and mouse)** (saved in `silvrcine_bridge_config.json`).
 - When the Quest connects, it **starts sharing the screen by itself** (the browser auto-selects `capture_source`, "Screen 1" in Edge).
 - Opening it again closes older Bridge windows, so only one runs.
 - Turns the Quest **laser pointer and buttons into real mouse and keyboard input** on Windows (SendInput).
@@ -34,7 +34,7 @@ Every button has a label next to it in VR (mode color, white = same in every mod
 
 ## Settings tab (v0.6.0)
 
-The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked from a list), captured screen, the app opened on connect, and the **apps the Quest can open**. For each app: name, exe (**Browse** opens a file picker, empty = auto detect), control profile and fullscreen key. **Test** opens it on the PC right away. **Save** writes `is3meo_bridge_config.json`.
+The Bridge window has a **Settings** tab: PC code, bitrate, audio device (picked from a list), captured screen, the app opened on connect, and the **apps the Quest can open**. For each app: name, exe (**Browse** opens a file picker, empty = auto detect), control profile and fullscreen key. **Test** opens it on the PC right away. **Save** writes `silvrcine_bridge_config.json`.
 
 On the Quest (SilVRCine) the menu item **PC app** asks the Bridge for this list: stick left / right picks an app (its control profile comes along), A opens it. The left trigger in MEDIA / PC opens the picked app too.
 
@@ -62,7 +62,7 @@ Pick an app: the left controller's commands are listed on the left, the right on
 
 **Save mapping** writes `bridge/profiles_user/<profile id>.json` and sends it to the Quest right away. **Reset to default** deletes it. If several apps share a profile, **Give <app> its own profile** splits it. **Share / JSON** shows the file to copy, or loads one someone sent you.
 
-## Config (`is3meo_bridge_config.json`)
+## Config (`silvrcine_bridge_config.json`)
 
 | Key | Default | Meaning |
 |---|---|---|
@@ -83,3 +83,9 @@ Pick an app: the left controller's commands are listed on the left, the right on
 Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
 
 [Support Marcelo Souza](https://ko-fi.com/msouza3d)
+
+## Controls follow the app in front (v0.11.0)
+Every second the Bridge checks which window is in front on the PC. When it belongs to a configured app (Stremio, PotPlayer...), the Quest switches to that app's controls by itself. Desktop or other programs keep the last controls.
+
+## Upgrading from Is3meo Bridge
+`silvrcine_bridge_v0.11.0.py` copies `is3meo_bridge_config.json` to `silvrcine_bridge_config.json` on its first run (code, apps, folders, all kept; the old file stays as a backup). Run `add_to_startup.bat` once again to rename the startup shortcut.
