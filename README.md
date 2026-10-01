@@ -1,6 +1,6 @@
-# Is3meoVR
+# SilVRCine
 
-**SilVR** (the silver screen in VR): a virtual cinema for Meta Quest 3, with a custom 3D theater and screen light spill (the movie lights up the room). Stremio is the first media source; local files and LAN sources come later.
+**SilVRCine** (the silver screen in VR): a virtual cinema for Meta Quest 3, with a custom 3D theater and screen light spill (the movie lights up the room). Stremio is the first media source; local files and LAN sources come later.
 
 This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest Browser and tap any build to test it in VR.
 
@@ -8,7 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
-| SilVR | 0.17.0 | New name for the cinema (was Light Spill Lab), now in `silvr/` |
+| SilVRCine | 0.17.2 | New seat kit (seat_ms.glb + armrest_ms.glb) and custom room (cinema_custom.glb) |
+| SilVRCine | 0.17.1 | Renamed from SilVR, now in `silvrcine/` |
 | Light Spill Lab | 0.16.5 | Custom room model (assets/cinema/cinema_room_custom.glb), full room export |
 | Light Spill Lab | 0.16.4 | Menu pulled back toward the wrist |
 | Light Spill Lab | 0.16.3 | 3D SBS / OU playback + 3D badge, Apps launcher tab, full-screen library |

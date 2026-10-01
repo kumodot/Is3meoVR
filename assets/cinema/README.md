@@ -1,12 +1,12 @@
 # Cinema room model
 
-Export of the built-in cinema room, in the app's real scale. Open it in Blender (File > Import > glTF 2.0), texture / remodel it, export it back as **`cinema_room_custom.glb`** in this folder. The app (Light Spill Lab v0.16.5+) loads it automatically and uses it instead of the built-in look.
+Export of the built-in cinema room, in the app's real scale. Open it in Blender (File > Import > glTF 2.0), texture / remodel it, export it back as **`cinema_custom.glb`** in this folder. The app (Light Spill Lab v0.16.5+) loads it automatically and uses it instead of the built-in look.
 
 | File | What it is |
 |---|---|
 | `cinema_room.glb` | The room shell: walls, floor, steps, ceiling, stage, screen frame, EXIT door and sign. No seats. |
 | `cinema_room_with_seats.glb` | Same plus every seat and armrest, as a reference for context (don't export these back). |
-| `cinema_room_custom.glb` | **Your version.** The app picks it up from here. |
+| `cinema_custom.glb` | **Your version.** The app picks it up from here. |
 
 ## Rules (only these)
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Is3meoVR Dev Launcher</title>
+<title>SilVRCine Dev Launcher</title>
 <style>
   :root {
     --bg: #0b0c10; --card: #151821; --line: #262b36; --fg: #e4e7ef; --dim: #8b91a3; --acc: #ffb347; --ok: #7fd48a;
@@ -51,7 +51,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Is3meoVR <span>// Dev Launcher</span></h1>
+    <h1>SilVRCine <span>// Dev Launcher</span></h1>
     <div class="ver" id="ver"></div>
   </header>
   <p class="intro">Test builds for the Quest 3 virtual cinema. Put on the headset, open this page in the Quest Browser, tap a build, then hit <b>Enter VR</b>. Links always load fresh (no cache), so you are looking at the latest push.</p>
@@ -73,9 +73,9 @@
 
 <div id="about" class="modal hidden">
   <div class="card">
-    <h2 style="margin-top:0">Is3meoVR Dev Launcher</h2>
+    <h2 style="margin-top:0">SilVRCine Dev Launcher</h2>
     <div class="ver" id="aboutVer"></div>
-    <p>Build index for the Is3meoVR project: a Quest 3 virtual cinema with screen light spill, starting with Stremio and growing into a full media room.</p>
+    <p>Build index for SilVRCine: a Quest 3 virtual cinema with screen light spill, starting with Stremio and growing into a full media room.</p>
     <p style="color:var(--fg)">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</p>
     <p><a href="https://ko-fi.com/msouza3d" target="_blank" rel="noopener" style="color:var(--acc)">Support Marcelo Souza</a></p>
     <button class="about" id="btnClose">Close</button>
@@ -83,14 +83,19 @@
 </div>
 
 <script>
-const LAUNCHER_VERSION = '1.0.0';
+const LAUNCHER_VERSION = '1.1.0';
 
 // Add new builds at the top. The first entry is shown as "Latest".
 const BUILDS = [
   {
-    name: 'SilVR', version: '0.17.0', date: '2026-09-30', vr: true,
-    path: 'silvr/silvr_v0.17.0.html',
-    notes: 'The cinema gets its (working) name: SilVR, the silver screen in VR. Same features as Light Spill Lab 0.16.5; settings carry over. Use with Is3meo Bridge v0.10.6.',
+    name: 'SilVRCine', version: '0.17.2', date: '2026-10-01', vr: true,
+    path: 'silvrcine/silvrcine_v0.17.2.html',
+    notes: 'New default assets: seats from assets/seat_kit/seat_ms.glb + armrest_ms.glb, custom room from assets/cinema/cinema_custom.glb. Use with Is3meo Bridge v0.10.6.',
+  },
+  {
+    name: 'SilVRCine', version: '0.17.1', date: '2026-09-30', vr: true,
+    path: 'silvrcine/silvrcine_v0.17.1.html',
+    notes: 'Renamed again: SilVRCine (was SilVR). Same features as 0.17.0; settings carry over. Use with Is3meo Bridge v0.10.6.',
   },
   {
     name: 'Light Spill Lab', version: '0.16.5', date: '2026-09-30', vr: true,

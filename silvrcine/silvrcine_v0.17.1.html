@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SilVR v0.17.0</title>
+<title>SilVRCine v0.17.1</title>
 <style>
   :root {
     --bg: rgba(12, 14, 20, 0.84);
@@ -66,7 +66,7 @@
 <body>
 
 <div id="panel">
-  <div class="hdr"><div class="title">SilVR</div><div class="ver" id="ver"></div></div>
+  <div class="hdr"><div class="title">SilVRCine</div><div class="ver" id="ver"></div></div>
   <div class="sub">VR Cinema prototype // screen light spill <span id="fps" style="float:right;font-family:ui-monospace,monospace"></span></div>
 
   <div class="sec">Source</div>
@@ -137,8 +137,8 @@
 
 <div id="about" class="modal hidden">
   <div class="card">
-    <h2>SilVR</h2>
-    <p style="margin-top:-6px;opacity:.75">Your silver screen in VR (formerly Light Spill Lab)</p>
+    <h2>SilVRCine</h2>
+    <p style="margin-top:-6px;opacity:.75">Your silver screen in VR (formerly SilVR / Light Spill Lab)</p>
     <div class="ver" id="aboutVer"></div>
     <p>Prototype of the screen light spill system for the Quest 3 VR Cinema project. The screen image is downsampled, blurred, smoothed over time and used as a set of area light zones that tint the room.</p>
     <div class="credit">Marcelo Souza / Kumodot.art - 2026 // @Msouza3d</div>
@@ -160,7 +160,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
-const APP_VERSION = '0.17.0';
+const APP_VERSION = '0.17.1';
 const $ = (id) => document.getElementById(id);
 $('ver').textContent = 'v' + APP_VERSION;
 $('aboutVer').textContent = 'v' + APP_VERSION;
@@ -422,7 +422,7 @@ function drawDemo(t) {
     case 6: { // End credits
       ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = '#e8e8e8'; ctx.font = '20px Georgia, serif'; ctx.textAlign = 'center';
-      const lines = ['SILVR', '', 'Directed by', 'Marcelo Souza', '', 'Screen Light', 'Area Zones', '', 'Kumodot.art', '2026'];
+      const lines = ['SILVRCINE', '', 'Directed by', 'Marcelo Souza', '', 'Screen Light', 'Area Zones', '', 'Kumodot.art', '2026'];
       lines.forEach((s, k) => ctx.fillText(s, W / 2, H + 20 + k * 34 - lt * 90));
       break;
     }
@@ -1630,7 +1630,7 @@ function drawMenu() {
   c.fill(); c.stroke();
   c.textBaseline = 'middle';
   c.textAlign = 'left'; c.fillStyle = '#ffb347'; c.font = 'bold 30px system-ui, sans-serif';
-  c.fillText('SilVR', 28, 48);
+  c.fillText('SilVRCine', 28, 48);
   c.textAlign = 'right'; c.fillStyle = '#8a90a2'; c.font = '20px monospace';
   c.fillText('v' + APP_VERSION + '  ' + fps + ' fps', W - 28, 48);
   const y0 = MENU_Y0, rh = MENU_RH;

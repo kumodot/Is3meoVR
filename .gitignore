@@ -3,3 +3,16 @@ __pycache__/
 *.pyc
 bridge/voicemeeter_restore.json
 bridge/thumbs/
+
+# Work files (not needed by the app)
+*.spp
+*.painter_lock
+*.blend
+*.blend1
+*.mp4
+*.glb.log
+assets/cinema/Max/
+assets/cinema/Blender/
+assets/cinema/Export/
+assets/seat_kit/export/
+assets/seat_kit/Downloaded/
