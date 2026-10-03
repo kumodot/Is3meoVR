@@ -1,5 +1,5 @@
 """
-Seat Kit Splitter v1.0.0 - SilVRCine
+Seat Kit Splitter v1.0.1 - SilVRCine
 Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
 Support Marcelo Souza: https://ko-fi.com/msouza3d
 
@@ -10,7 +10,7 @@ Each part is moved back to where the current seat_ms.glb / armrest_ms.glb sit (s
 center in X/Z, same floor height). With no reference file: centered in X/Z, standing on the floor.
 The previous files are kept as *_prev.glb. Textures and materials are copied as they are.
 
-Usage: drag the GLB onto split_seat_kit.bat, or: python split_seat_kit_v1.0.0.py painter_export.glb
+Usage: drag the GLB onto split_seat_kit.bat, or: python split_seat_kit_v1.0.1.py painter_export.glb
 """
 import json
 import math
@@ -19,7 +19,7 @@ import struct
 import sys
 from pathlib import Path
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 HERE = Path(__file__).resolve().parent
 OUT = {'seat': HERE / 'seat_ms.glb', 'arm': HERE / 'armrest_ms.glb'}
 
@@ -108,10 +108,11 @@ def anchor(lo, hi):
 
 def main():
     print(f'Seat Kit Splitter v{VERSION} - Marcelo Souza / Kumodot.art - 2026 // @Msouza3d')
-    if len(sys.argv) < 2:
-        print('Drag the Painter GLB (seat + armrest) onto split_seat_kit.bat')
+    args = [a for a in sys.argv[1:] if a.strip()]
+    if not args or not Path(args[0]).is_file():
+        print('No file given. Drag the Painter GLB (seat + armrest) onto split_seat_kit.bat (double-clicking it does nothing).')
         return
-    src = Path(sys.argv[1])
+    src = Path(args[0])
     j, binc = read_glb(src)
     items = mesh_nodes(j)
     parts = {'seat': [], 'arm': []}

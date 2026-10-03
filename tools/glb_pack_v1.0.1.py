@@ -1,5 +1,5 @@
 """
-GLB Pack v1.0.0 - SilVRCine
+GLB Pack v1.0.1 - SilVRCine
 Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
 Support Marcelo Souza: https://ko-fi.com/msouza3d
 
@@ -9,7 +9,7 @@ Makes a model light for the Quest: one .glb with every texture embedded as JPEG.
 - Textures bigger than 2048 px are scaled down to 2048.
 - Output: <name>.glb next to the input. An existing file with that name is kept as <name>_prev.glb.
 
-Usage: drag the .glb / .gltf onto glb_pack.bat, or: python glb_pack_v1.0.0.py model.gltf
+Usage: drag the .glb / .gltf onto glb_pack.bat, or: python glb_pack_v1.0.1.py model.gltf
 Needs Pillow (pip install pillow).
 """
 import base64
@@ -20,7 +20,7 @@ import struct
 import sys
 from pathlib import Path
 
-VERSION = '1.0.0'
+VERSION = '1.0.1'
 MAX_SIZE = 2048
 JPEG_QUALITY = 90
 JPEG_QUALITY_NORMAL = 95
@@ -84,10 +84,20 @@ def convert(data, normal):
 
 def main():
     print(f'GLB Pack v{VERSION} - Marcelo Souza / Kumodot.art - 2026 // @Msouza3d')
-    if len(sys.argv) < 2:
-        print('Drag a .glb or .gltf onto glb_pack.bat')
+    files = [a for a in sys.argv[1:] if a.strip()]
+    if not files:
+        print('No file given. Drag a .glb or .gltf onto glb_pack.bat (double-clicking it does nothing).')
         return
-    src = Path(sys.argv[1])
+    for f in files:
+        src = Path(f)
+        if not src.is_file() or src.suffix.lower() not in ('.glb', '.gltf'):
+            print(f'Skipped (not a .glb / .gltf file): {f}')
+            continue
+        pack(src)
+
+
+def pack(src):
+    print(f'{src.name}:')
     j, buffers = load(src)
     size_in = src.stat().st_size
     if src.suffix.lower() == '.gltf':
