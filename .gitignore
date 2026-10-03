@@ -17,3 +17,5 @@ assets/cinema/Blender/
 assets/cinema/Export/
 assets/seat_kit/export/
 assets/seat_kit/Downloaded/
+assets/seat_kit/_test_split/
+*_prev.glb
