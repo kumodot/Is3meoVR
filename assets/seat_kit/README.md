@@ -31,3 +31,8 @@ Export seat + armrest together as `seat_kit.glb` in this folder (e.g. straight f
 - The armrest is centered in X by the app, so you can move it aside for baking. Keep its height (Y) and depth (Z).
 - Textures: 2K JPEG keeps the file small for the Quest.
 When `seat_kit.glb` is missing the app loads `seat_ms.glb` + `armrest_ms.glb` instead.
+
+## Low seat kit: seat_kit_low.glb (SilVRCine 0.19.0+)
+Same rules as seat_kit.glb (seat + armrest in one file, "arm" in the armrest name, same origin and size), but light:
+fewer triangles, 1K textures, no normal map (the app drops it anyway). Seats within "Detailed seats radius"
+(Tuning) use seat_kit.glb, the rest use this one. No file = every seat uses seat_kit.glb.

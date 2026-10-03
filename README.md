@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine | 0.19.0 | Performance: aisle glow pools / real / off, zones 2x2 + 3x2, normal map distance fade, seat LOD (seat_kit_low.glb) |
 | SilVRCine | 0.18.7 | cubelights_NN markers too; new custom room with 20 light markers |
 | SilVRCine | 0.18.6 | Light markers steplights_NN / AisleLight (empties or small hidden meshes), up to 24 |
 | SilVRCine | 0.18.5 | Aisle lights per row of step lights, or on AisleLight empties |
