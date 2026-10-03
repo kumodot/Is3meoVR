@@ -23,3 +23,11 @@ Modular seat parts used by the Light Spill Lab default room. Every part is insta
 4. For quick tests without pushing, use **Load seat GLB / Load armrest GLB** in the app.
 
 Budget tip for Quest: aim for 300 to 600 triangles per seat and bake the bevel detail into a normal map.
+
+## One file: seat_kit.glb (SilVRCine 0.18.2+)
+Export seat + armrest together as `seat_kit.glb` in this folder (e.g. straight from Substance Painter).
+- Anything with "arm" in its object or mesh name is the armrest, the rest is the seat.
+- The seat stays exactly where it is in the file (origin on the floor, front facing -Z).
+- The armrest is centered in X by the app, so you can move it aside for baking. Keep its height (Y) and depth (Z).
+- Textures: 2K JPEG keeps the file small for the Quest.
+When `seat_kit.glb` is missing the app loads `seat_ms.glb` + `armrest_ms.glb` instead.

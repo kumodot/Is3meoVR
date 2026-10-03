@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine | 0.18.2 | One-file seat kit (seat_kit.glb: seat + armrest, armrest auto-centered in X) |
 | SilVRCine | 0.18.1 | Screen light follows normal maps + roughness of GLB models (room, seats) |
 | SilVRCine | 0.18.0 | Controls follow the app in front on the PC, masking kept with the custom room, Room smoothing, readable grey labels |
 | SilVRCine Bridge | 0.11.0 | Renamed from Is3meo Bridge (config copied over), tells the Quest which app is in front (Stream Sender 0.9.4) |
