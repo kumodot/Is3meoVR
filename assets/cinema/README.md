@@ -31,4 +31,5 @@ Marcelo Souza / Kumodot.art - 2026 // @Msouza3d - [Support Marcelo Souza](https:
 ## Aisle lights (SilVRCine 0.18.5+)
 Glowing (emissive) parts of the room, except anything named EXIT, get a few faint point lights so the floor around them is lit.
 By default they are spread along each row of glowing parts. To place them yourself, add empties (or any object)
-named `AisleLight` (AisleLight.001, AisleLight_02...) where you want a light, up to 12. Strength, range and height: Tuning panel.
+named `AisleLight` (AisleLight.001...) or `steplights_01`, `steplights_02`... where you want a light, up to 24.
+3ds Max does not export empties: use small boxes with those names instead, the app hides them. Strength, range and height: Tuning panel.
