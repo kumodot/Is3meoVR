@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine | 0.18.5 | Aisle lights per row of step lights, or on AisleLight empties |
 | SilVRCine | 0.18.4 | Tuning (debug) panel + VR page, Save to PC; aisle lights, Model bump, Ambient up to 2 |
 | SilVRCine Bridge | 0.11.1 | Saves tuning from the Quest to tuning/silvrcine_tuning_latest.json |
 | SilVRCine | 0.18.2 | One-file seat kit (seat_kit.glb: seat + armrest, armrest auto-centered in X) |

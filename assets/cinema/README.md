@@ -27,3 +27,8 @@ Export of the built-in cinema room, in the app's real scale. Open it in Blender 
 - Desktop: **Load room model (keep seats)...** tests a GLB from your disk without copying it here.
 
 Marcelo Souza / Kumodot.art - 2026 // @Msouza3d - [Support Marcelo Souza](https://ko-fi.com/msouza3d)
+
+## Aisle lights (SilVRCine 0.18.5+)
+Glowing (emissive) parts of the room, except anything named EXIT, get a few faint point lights so the floor around them is lit.
+By default they are spread along each row of glowing parts. To place them yourself, add empties (or any object)
+named `AisleLight` (AisleLight.001, AisleLight_02...) where you want a light, up to 12. Strength, range and height: Tuning panel.
