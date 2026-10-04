@@ -3,7 +3,7 @@
   "name": "PotPlayer",
   "app": "potplayer",
   "version": 2,
-  "notes": "PotPlayer default hotkeys as far as we know. Edit if your setup differs.",
+  "notes": "PotPlayer default hotkeys. A hold = next subtitle track (Alt+L). Player page: subs on/off (Alt+H), aspect ratio cycle (Ctrl+F6), aspect reset (Ctrl+F5).",
   "actions": {
     "playPause": {
       "key": "Space",
@@ -48,7 +48,13 @@
       "label": "Fullscreen"
     },
     "back": null,
-    "showUI": null,
+    "showUI": {
+      "key": "KeyL",
+      "mods": [
+        "Alt"
+      ],
+      "label": "Subs track"
+    },
     "next": {
       "key": "PageDown",
       "label": "Next file"
@@ -62,6 +68,34 @@
     "subDelayDown": {
       "key": "Comma",
       "label": "Subs -"
+    },
+    "subsToggle": {
+      "key": "KeyH",
+      "mods": [
+        "Alt"
+      ],
+      "label": "Subs on/off"
+    },
+    "subsTrack": {
+      "key": "KeyL",
+      "mods": [
+        "Alt"
+      ],
+      "label": "Subs track"
+    },
+    "aspect": {
+      "key": "F6",
+      "mods": [
+        "Control"
+      ],
+      "label": "Aspect ratio"
+    },
+    "aspectReset": {
+      "key": "F5",
+      "mods": [
+        "Control"
+      ],
+      "label": "Aspect reset"
     }
   }
 }
