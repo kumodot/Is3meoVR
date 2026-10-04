@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine Bridge | 0.11.5 | Grayjay support: window match by title + program, per app "Laser = mouse" option (Stream Sender 0.9.8) |
+| SilVRCine | 0.20.3 | "Laser = mouse" apps: no grip = laser is the mouse, trigger click, stick scroll |
 | SilVRCine | 0.20.2 | Loading card on the curved screen, blue light in the Library, sliding Library pages, stream watchdog |
 | SilVRCine Bridge | 0.11.4 | Store / web apps (Netflix): shell:AppsFolder path + window title; never closes the browser. Stream Sender 0.9.7: Controls tab with the controller drawing per state (Master grip, Loco grip, no grip, menu, Library) |
 | SilVRCine | 0.20.1 | Loco X / Y labels match what they do |

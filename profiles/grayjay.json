@@ -1,0 +1,20 @@
+{
+  "id": "grayjay",
+  "name": "Grayjay",
+  "app": "grayjay",
+  "version": 1,
+  "notes": "Grayjay desktop (YouTube and other sources without ads). Player keys: Space, arrows (5 s / volume), M, T, F11, Esc. No keyboard navigation for browsing: the app is set as 'Laser = mouse', so without grip the laser is the mouse.",
+  "actions": {
+    "playPause": { "key": "Space", "label": "Play/Pause" },
+    "seekBack": { "key": "ArrowLeft", "label": "-5s" },
+    "seekFwd": { "key": "ArrowRight", "label": "+5s" },
+    "volUp": { "key": "ArrowUp", "label": "Vol +" },
+    "volDown": { "key": "ArrowDown", "label": "Vol -" },
+    "back": { "key": "Escape", "label": "Back" },
+    "esc": null,
+    "showUI": { "key": "KeyT", "label": "Theater mode" },
+    "fullscreen": { "key": "F11", "label": "Fullscreen" },
+    "mute": { "key": "KeyM", "label": "Mute" },
+    "next": null
+  }
+}
