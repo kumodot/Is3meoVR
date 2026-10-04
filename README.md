@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine Bridge | 0.11.6 | Opens Stream Sender 0.9.9: the Controls drawing shows the Loco extras in the Master grip layer |
+| SilVRCine | 0.20.4 | Master grip = Loco hand player extras (subs, aspect, next, mute), loading card when opening apps |
 | SilVRCine Bridge | 0.11.5 | Grayjay support: window match by title + program, per app "Laser = mouse" option (Stream Sender 0.9.8) |
 | SilVRCine | 0.20.3 | "Laser = mouse" apps: no grip = laser is the mouse, trigger click, stick scroll |
 | SilVRCine | 0.20.2 | Loading card on the curved screen, blue light in the Library, sliding Library pages, stream watchdog |
