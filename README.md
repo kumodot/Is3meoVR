@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine Bridge | 0.11.4 | Store / web apps (Netflix): shell:AppsFolder path + window title; never closes the browser. Stream Sender 0.9.7: Controls tab with the controller drawing per state (Master grip, Loco grip, no grip, menu, Library) |
 | SilVRCine | 0.20.1 | Loco X / Y labels match what they do |
 | SilVRCine Bridge | 0.11.3 | Opens Stream Sender 0.9.6: Controls tab (player keys per app + VR controls reference), Netflix profile |
 | SilVRCine | 0.20.0 | Tuning defaults, smoother film frames + refresh rate, loading cover, library swipe + 3D tab + auto pause, player page (subs, aspect), turn while walking |
