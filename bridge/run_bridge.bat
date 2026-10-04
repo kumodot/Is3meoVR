@@ -1,7 +1,7 @@
 @echo off
-REM SilVRCine Bridge launcher - v0.11.2 (formerly Is3meo Bridge)
+REM SilVRCine Bridge launcher - v0.11.3 (formerly Is3meo Bridge)
 REM Marcelo Souza / Kumodot.art - 2026 // @Msouza3d
-title SilVRCine Bridge v0.11.2
+title SilVRCine Bridge v0.11.3
 cd /d "%~dp0"
-python silvrcine_bridge_v0.11.2.py
+python silvrcine_bridge_v0.11.3.py
 pause

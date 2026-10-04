@@ -1,0 +1,47 @@
+{
+  "id": "netflix",
+  "name": "Netflix",
+  "app": "netflix",
+  "version": 3,
+  "notes": "Netflix desktop app (a web view). Player keys only: Space, arrows (seek / volume), Esc, F, M. Browsing the catalog: laser pointer (Master grip + trigger hold, A = click) until the browse mode is decided.",
+  "actions": {
+    "playPause": {
+      "key": "Space",
+      "label": "Play/Pause"
+    },
+    "seekBack": {
+      "key": "ArrowLeft",
+      "label": "-10s"
+    },
+    "seekFwd": {
+      "key": "ArrowRight",
+      "label": "+10s"
+    },
+    "volUp": {
+      "key": "ArrowUp",
+      "label": "Vol +"
+    },
+    "volDown": {
+      "key": "ArrowDown",
+      "label": "Vol -"
+    },
+    "back": {
+      "key": "Escape",
+      "label": "Back"
+    },
+    "esc": null,
+    "showUI": {
+      "key": "Tab",
+      "label": "Next button"
+    },
+    "fullscreen": {
+      "key": "KeyF",
+      "label": "Fullscreen"
+    },
+    "mute": {
+      "key": "KeyM",
+      "label": "Mute"
+    },
+    "next": null
+  }
+}

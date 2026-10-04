@@ -8,6 +8,8 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine | 0.20.1 | Loco X / Y labels match what they do |
+| SilVRCine Bridge | 0.11.3 | Opens Stream Sender 0.9.6: Controls tab (player keys per app + VR controls reference), Netflix profile |
 | SilVRCine | 0.20.0 | Tuning defaults, smoother film frames + refresh rate, loading cover, library swipe + 3D tab + auto pause, player page (subs, aspect), turn while walking |
 | SilVRCine Bridge | 0.11.2 | Reports when the player is fullscreen (Stream Sender 0.9.5) |
 | SilVRCine | 0.19.0 | Performance: aisle glow pools / real / off, zones 2x2 + 3x2, normal map distance fade, seat LOD (seat_kit_low.glb) |
