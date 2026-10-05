@@ -8,6 +8,7 @@ This repo also hosts the **Dev Launcher** on GitHub Pages: open it in the Quest 
 
 | Build | Version | What it is |
 |---|---|---|
+| SilVRCine | 0.21.1 | Audience colors per part (skin, jumpsuit, striped / plain shirt, hair, cap on half, orange gloves) |
 | SilVRCine | 0.21.0 | Audience: instanced low-poly people in random seats, a few heads look around, empty seats near you |
 | SilVRCine Bridge | 0.11.6 | Opens Stream Sender 0.9.9: the Controls drawing shows the Loco extras in the Master grip layer |
 | SilVRCine | 0.20.4 | Master grip = Loco hand player extras (subs, aspect, next, mute), loading card when opening apps |
